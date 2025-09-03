@@ -8,7 +8,7 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const handleLogin = () => {
-    Alert.alert("Login", "Login functionality would go here!");
+    navigation.replace("TenantDashboard");
   };
   const handleGoogleLogin = () => {
     Alert.alert("Google Login", "Google login functionality would go here!");
