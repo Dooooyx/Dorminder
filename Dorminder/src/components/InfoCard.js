@@ -8,41 +8,37 @@ const InfoCard = ({
   ctaText,
   onCtaPress,
 }) => {
+  // Expect one item per column for this card. We'll stack them vertically.
+  const topItem = leftColumn?.[0];
+  const bottomItem = rightColumn?.[0];
+
   return (
     <View style={styles.card}>
       {title && <Text style={styles.cardTitle}>{title}</Text>}
-      
-      <View style={styles.cardContent}>
-        {/* Left Column */}
-        <View style={styles.leftColumn}>
-          {leftColumn.map((item, index) => (
-            <View key={index} style={styles.columnItem}>
-              <Text style={styles.itemLabel}>{item.label}</Text>
-              {item.date && <Text style={styles.itemDate}>{item.date}</Text>}
-              <Text style={styles.itemValue}>{item.value}</Text>
-            </View>
-          ))}
-        </View>
 
-        {/* Right Column */}
-        <View style={styles.rightColumn}>
-          {rightColumn.map((item, index) => (
-            <View key={index} style={styles.columnItem}>
-              <Text style={styles.itemLabel}>{item.label}</Text>
-              {item.date && <Text style={styles.itemDate}>{item.date}</Text>}
-              <Text style={styles.itemValue}>{item.value}</Text>
-            </View>
-          ))}
+      {/* Top section: Current Balance */}
+      {topItem && (
+        <View style={styles.section}>
+          <Text style={styles.itemLabel}>{topItem.label}</Text>
+          {topItem.date ? <Text style={styles.itemDate}>{topItem.date}</Text> : null}
+          <Text style={styles.itemValue}>{topItem.value}</Text>
         </View>
-      </View>
+      )}
 
-      {/* CTA Button positioned at the bottom right */}
+      {/* Bottom section: Last Payment */}
+      {bottomItem && (
+        <View style={[styles.section, styles.sectionSpacing]}>
+          <Text style={styles.itemLabel}>{bottomItem.label}</Text>
+          {bottomItem.date ? <Text style={styles.itemDate}>{bottomItem.date}</Text> : null}
+          <Text style={styles.itemValue}>{bottomItem.value}</Text>
+        </View>
+      )}
+
+      {/* CTA bottom-right */}
       {ctaText && (
-        <View style={styles.ctaContainer}>
-          <TouchableOpacity style={styles.ctaButton} onPress={onCtaPress}>
-            <Text style={styles.ctaText}>{ctaText}</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.ctaButton} onPress={onCtaPress}>
+          <Text style={styles.ctaText}>{ctaText}</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -51,57 +47,48 @@ const InfoCard = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#2E5984',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 16, // compact
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
   },
   cardTitle: {
     color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 16,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 10,
   },
-  cardContent: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 16, // Add space for the CTA button
+  section: {
+    alignItems: 'flex-start',
   },
-  leftColumn: {
-    flex: 1,
-  },
-  rightColumn: {
-    flex: 1,
-  },
-  columnItem: {
-    marginBottom: 16,
+  sectionSpacing: {
+    marginTop: 8,
   },
   itemLabel: {
-    color: '#D1E3F8',
-    fontSize: 14,
-    marginBottom: 4,
+    color: '#E2ECF6',
+    fontSize: 14, // smaller subtitle
   },
   itemDate: {
     color: '#D1E3F8',
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 12, // muted small
+    marginTop: 2,
   },
   itemValue: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  ctaContainer: {
-    alignItems: 'flex-end', // Align button to the right
+    fontSize: 22, // larger amount
+    fontWeight: '800',
+    marginTop: 4,
   },
   ctaButton: {
+    alignSelf: 'flex-end',
     backgroundColor: '#CDEAE3',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 12,
+    marginTop: 10,
   },
   ctaText: {
     color: '#2f4f4f',

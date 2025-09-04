@@ -10,9 +10,11 @@ import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import InfoCard from '../components/InfoCard';
 import AnnouncementCard from '../components/AnnouncementCard';
+import BurgerNav from '../components/BurgerNav';
 
-const TenantDashboard = () => {
+const TenantDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [isBurgerNavVisible, setIsBurgerNavVisible] = React.useState(false);
   const userName = 'Chrystls';
 
   const handleTabPress = (tabId) => {
@@ -31,12 +33,53 @@ const TenantDashboard = () => {
 
   const handleMenuPress = () => {
     console.log('Menu pressed');
-    // Add your menu logic here
+    setIsBurgerNavVisible(true);
   };
 
   const handleViewMore = () => {
     console.log('View More pressed');
     // Add your view more logic here
+  };
+
+  // BurgerNav handlers
+  const handleCloseBurgerNav = () => {
+    setIsBurgerNavVisible(false);
+  };
+
+  const handleViewRoomDetails = () => {
+    console.log('View Room Details pressed');
+    setIsBurgerNavVisible(false);
+    // Add your room details logic here
+  };
+
+  const handleContactInfo = () => {
+    console.log('Contact Info pressed');
+    setIsBurgerNavVisible(false);
+    // Add your contact info logic here
+  };
+
+  const handleNotifications = () => {
+    console.log('Notifications Settings pressed');
+    setIsBurgerNavVisible(false);
+    // Add your notifications logic here
+  };
+
+  const handleChangePassword = () => {
+    console.log('Change Password pressed');
+    setIsBurgerNavVisible(false);
+    // Add your change password logic here
+  };
+
+  const handleLogout = () => {
+    console.log('Logout pressed');
+    setIsBurgerNavVisible(false);
+    
+    // Clear any user data/session here
+    // For now, we'll just navigate back to LoginScreen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
 
   const DashboardUI = () => (
@@ -71,7 +114,7 @@ const TenantDashboard = () => {
       <AnnouncementCard
         dateText="24 Aug 10:00"
         statusLabel="Upcoming"
-        title="🔧 Water Interruption"
+        title="Water Interruption"
         subtitle="August 25, 2025 - 2:00PM to 6:00PM"
         body="Maintenance by MCWD. Please store water in advance. Thx :>>"
         footer="Posted By: Landlord"
@@ -111,6 +154,17 @@ const TenantDashboard = () => {
       </View>
 
       <BotNav activeTab={activeTab} onTabPress={handleTabPress} />
+      
+      <BurgerNav
+        visible={isBurgerNavVisible}
+        onClose={handleCloseBurgerNav}
+        onViewRoomDetails={handleViewRoomDetails}
+        onContactInfo={handleContactInfo}
+        onNotifications={handleNotifications}
+        onChangePassword={handleChangePassword}
+        onLogout={handleLogout}
+        userName={userName}
+      />
     </SafeAreaView>
   );
 };
