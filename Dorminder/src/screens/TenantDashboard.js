@@ -11,6 +11,7 @@ import BotNav from '../components/BotNav';
 import InfoCard from '../components/InfoCard';
 import AnnouncementCard from '../components/AnnouncementCard';
 import BurgerNav from '../components/BurgerNav';
+import TenantInfoHeader from '../components/TenantInfoHeader';
 
 const TenantDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -19,6 +20,11 @@ const TenantDashboard = ({ navigation }) => {
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
+    if (tabId === 'rules') {
+      navigation.navigate('TenantRules');
+    }
+    // For other tabs, show placeholder content within this screen
+    // In the future, these can be separate screens
   };
 
   const handleNotificationPress = () => {
@@ -85,7 +91,14 @@ const TenantDashboard = ({ navigation }) => {
   const DashboardUI = () => (
     <ScrollView contentContainerStyle={styles.dashboardContent}>
       <Text style={styles.greeting}>Hello, <Text style={styles.greetingAccent}>{userName}</Text></Text>
-      <Text style={styles.subInfo}>Room 209  |  Contract until: Dec 2025</Text>
+      <TenantInfoHeader 
+        roomNumber="209" 
+        contractDate="Dec 2025"
+        showLogo={false}
+        headerTitle={null}
+        containerStyle={styles.tenantInfoContainer}
+        roomInfoStyle={styles.tenantRoomInfo}
+      />
 
       {/* Rent Status Card using reusable InfoCard component */}
       <InfoCard
@@ -110,13 +123,23 @@ const TenantDashboard = ({ navigation }) => {
 
       <Text style={styles.sectionTitle}>Announcements ↗</Text>
 
-      {/* Announcement Card using reusable AnnouncementCard component */}
+      {/* Water Interruption Announcement */}
       <AnnouncementCard
         dateText="24 Aug 10:00"
         statusLabel="Upcoming"
         title="Water Interruption"
         subtitle="August 25, 2025 - 2:00PM to 6:00PM"
-        body="Maintenance by MCWD. Please store water in advance. Thx :>>"
+        body="Maintenance by VECO. Please store water in advance. Thx >>"
+        footer="Posted By: Landlord"
+      />
+
+      {/* Reminder Announcement */}
+      <AnnouncementCard
+        dateText="24 Aug 10:00"
+        statusLabel="Active"
+        title="Reminder"
+        subtitle="August 25, 2025 - 2:00PM to 6:00PM"
+        body="Please submit rent payment on or before August 30, thank you."
         footer="Posted By: Landlord"
       />
     </ScrollView>
@@ -133,6 +156,12 @@ const TenantDashboard = ({ navigation }) => {
       
       <View style={styles.content}>
         {activeTab === 'dashboard' && <DashboardUI />}
+        {activeTab === 'myroom' && (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>My Room Screen</Text>
+            <Text style={styles.placeholderSubtext}>Room details and management</Text>
+          </View>
+        )}
         {activeTab === 'rules' && (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>Rules Screen</Text>
@@ -188,11 +217,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   greetingAccent: {
-    color: '#EE6C4D',
+    color: '#FF6B35', // Orange color from image
   },
-  subInfo: {
-    fontSize: 16,
-    color: '#6b7280',
+  tenantInfoContainer: {
+    alignItems: 'flex-start',
+    paddingHorizontal: 0,
+  },
+  tenantRoomInfo: {
+    textAlign: 'left',
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
   sectionTitle: {

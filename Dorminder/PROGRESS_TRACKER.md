@@ -4,7 +4,7 @@
 ## 🎯 Project Overview
 Dorminder is a React Native mobile application with Expo framework, designed to be a comprehensive dormitory management system for tenants and landlords.
 
-## 📊 Current Status: **FRONT-END FOUNDATION COMPLETE (65%)**
+## 📊 Current Status: **FRONT-END FOUNDATION COMPLETE (75%)**
 - ✅ Basic project structure and navigation
 - ✅ Login/Register screens with polished UI
 - ✅ TenantDashboard with beautiful card components
@@ -14,6 +14,9 @@ Dorminder is a React Native mobile application with Expo framework, designed to 
 - ✅ **Interactive burger menu integration**
 - ✅ **Menu items fully pressable and functional**
 - ✅ **Expo-blur package integrated for modern UI**
+- ✅ **TenantRules screen with complete navigation**
+- ✅ **Smart header switching logic (TopNav/TenantInfoHeader)**
+- ✅ **All BotNav tabs functional with proper navigation**
 
 ---
 
@@ -138,7 +141,9 @@ Components:
 
 #### **Week 2: Complete Screen Set & Polish**
 - [ ] **Tenant Screens**
-  - [ ] RulesScreen (detailed dormitory rules)
+  - [x] RulesScreen (detailed dormitory rules) ✅ **COMPLETED**
+  - [x] Navigation System (BotNav with all tabs) ✅ **COMPLETED**
+  - [x] Header Logic (TopNav/TenantInfoHeader switching) ✅ **COMPLETED**
   - [ ] RequestScreen (maintenance request form)
   - [ ] PaymentScreen (rent payment interface)
   - [ ] ProfileScreen (user profile management)
@@ -533,10 +538,10 @@ Small: 14px, 400 weight
 
 ---
 
-**Last Updated**: December 2024 - BurgerNav Integration Complete
-**Next Review**: After completing remaining tenant screens
+**Last Updated**: December 2024 - Navigation System & TenantRules Complete
+**Next Review**: After completing remaining tenant screens (RequestScreen, PaymentScreen, ProfileScreen)
 **Project Manager**: Development Team
-**Status**: 🟢 IN PROGRESS - Front-end Foundation Phase (65% Complete)
+**Status**: 🟢 IN PROGRESS - Front-end Foundation Phase (75% Complete)
 
 ## 🎉 RECENT ACCOMPLISHMENTS (December 2024)
 - ✅ **BurgerNav Component**: Fully functional slide-out menu with blur effect
@@ -546,3 +551,369 @@ Small: 14px, 400 weight
 - ✅ **State Management**: Proper burger menu visibility control
 - ✅ **Component Integration**: Seamless integration with TenantDashboard
 - ✅ **AI-Friendly Documentation**: Comprehensive progress tracker for future development
+- ✅ **Figma-Accurate Screens**: Complete rebuild of TenantDashboard and TenantRules screens
+- ✅ **Reusable Components**: TenantInfoHeader and BottomNavigation components
+- ✅ **Pixel-Perfect Design**: Exact color matching and typography from Figma designs
+- ✅ **TenantRules Screen**: Complete implementation with detailed boarding house rules
+- ✅ **Navigation System**: Fixed BotNav navigation between all tabs and screens
+- ✅ **Header Logic**: Smart TopNav/TenantInfoHeader switching based on active tab
+- ✅ **Component Cleanup**: Removed duplicate BottomNavigation component
+- ✅ **Cross-Screen Navigation**: Seamless navigation between Dashboard and Rules screens
+
+---
+
+## 🔗 MULTI-PLATFORM INTEGRATION STRATEGY
+
+### **React Native (Tenant) + React Vite.js (Landlord) Connection**
+
+**AI Prompt**: "Implement the connection between React Native tenant app and React Vite.js landlord web app using Firebase backend. Set up shared authentication, real-time data synchronization, and cross-platform communication."
+
+#### **Architecture Overview**
+```
+┌─────────────────┐    ┌─────────────────┐
+│   React Native  │    │   React Vite.js │
+│  (Tenant App)   │    │ (Landlord Web)  │
+│   - Mobile UI   │    │   - Web UI      │
+│   - Tenant Flow │    │   - Landlord    │
+│   - Push Notif  │    │     Dashboard   │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          └──────────┬───────────┘
+                     │
+            ┌────────▼────────┐
+            │   Firebase      │
+            │   Backend       │
+            │ - Authentication│
+            │ - Firestore DB  │
+            │ - Real-time     │
+            │ - Storage       │
+            │ - Functions     │
+            └─────────────────┘
+```
+
+#### **Implementation Steps**
+
+##### **Phase 1: Firebase Backend Setup**
+```javascript
+// Firebase Configuration (Shared)
+const firebaseConfig = {
+  apiKey: "your-api-key",
+  authDomain: "dorminder-app.firebaseapp.com",
+  projectId: "dorminder-app",
+  storageBucket: "dorminder-app.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
+};
+
+// Collections Structure
+users: {
+  userId: {
+    email, name, role: 'tenant'|'landlord', 
+    roomNumber, contractEnd, profileImage,
+    createdAt, lastLogin
+  }
+}
+
+payments: {
+  paymentId: {
+    userId, tenantId, landlordId,
+    amount, date, status: 'pending'|'paid'|'overdue',
+    type: 'rent'|'utilities'|'maintenance',
+    dueDate, paidDate, receipt
+  }
+}
+
+announcements: {
+  announcementId: {
+    title, body, date, authorId,
+    priority: 'low'|'medium'|'high',
+    status: 'active'|'archived',
+    targetAudience: 'all'|'specific_tenants',
+    tenantIds: []
+  }
+}
+
+maintenance_requests: {
+  requestId: {
+    tenantId, landlordId, title, description,
+    date, status: 'pending'|'in_progress'|'completed',
+    priority: 'low'|'medium'|'high'|'urgent',
+    images: [], assignedTo, estimatedCost
+  }
+}
+
+notifications: {
+  notificationId: {
+    userId, type: 'payment'|'announcement'|'maintenance',
+    title, body, read: false, createdAt,
+    actionRequired: false, actionUrl
+  }
+}
+```
+
+##### **Phase 2: React Vite.js Landlord Web App**
+```bash
+# Create Landlord Web App
+npm create vite@latest dorminder-landlord -- --template react
+cd dorminder-landlord
+npm install firebase @mui/material @emotion/react @emotion/styled @mui/icons-material axios react-router-dom
+
+# Project Structure
+dorminder-landlord/
+├── src/
+│   ├── components/
+│   │   ├── Dashboard/
+│   │   │   ├── TenantList.jsx
+│   │   │   ├── PaymentOverview.jsx
+│   │   │   ├── MaintenanceRequests.jsx
+│   │   │   └── AnnouncementManager.jsx
+│   │   ├── Layout/
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── TopBar.jsx
+│   │   │   └── Layout.jsx
+│   │   └── common/
+│   │       ├── DataTable.jsx
+│   │       ├── StatusBadge.jsx
+│   │       └── ActionButton.jsx
+│   ├── pages/
+│   │   ├── Dashboard.jsx
+│   │   ├── Tenants.jsx
+│   │   ├── Payments.jsx
+│   │   ├── Maintenance.jsx
+│   │   ├── Announcements.jsx
+│   │   └── Settings.jsx
+│   ├── services/
+│   │   ├── firebase.js
+│   │   ├── auth.js
+│   │   ├── tenants.js
+│   │   ├── payments.js
+│   │   └── maintenance.js
+│   ├── hooks/
+│   │   ├── useAuth.js
+│   │   ├── useFirestore.js
+│   │   └── useRealtime.js
+│   └── utils/
+│       ├── constants.js
+│       └── helpers.js
+```
+
+##### **Phase 3: Shared Authentication System**
+```javascript
+// React Native (Tenant App)
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+// Login with role-based routing
+const loginUser = async (email, password) => {
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+  const userRole = userDoc.data().role;
+  
+  if (userRole === 'tenant') {
+    navigation.navigate('TenantDashboard');
+  } else if (userRole === 'landlord') {
+    // Redirect to web app or show web link
+    Linking.openURL('https://landlord.dorminder.com');
+  }
+};
+
+// React Vite.js (Landlord Web App)
+import { onAuthStateChanged } from 'firebase/auth';
+
+const useAuth = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        if (userData.role === 'landlord') {
+          setUser(userData);
+        } else {
+          // Redirect tenant users to mobile app
+          window.location.href = 'dorminder://tenant-dashboard';
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    
+    return unsubscribe;
+  }, []);
+  
+  return { user, loading };
+};
+```
+
+##### **Phase 4: Real-time Data Synchronization**
+```javascript
+// Real-time Updates for Both Apps
+// React Native (Tenant)
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
+
+const useRealtimeAnnouncements = (tenantId) => {
+  const [announcements, setAnnouncements] = useState([]);
+  
+  useEffect(() => {
+    const q = query(
+      collection(db, 'announcements'),
+      where('targetAudience', 'in', ['all', 'specific_tenants']),
+      where('status', '==', 'active')
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const announcementsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAnnouncements(announcementsData);
+    });
+    
+    return unsubscribe;
+  }, [tenantId]);
+  
+  return announcements;
+};
+
+// React Vite.js (Landlord)
+const useRealtimeMaintenanceRequests = (landlordId) => {
+  const [requests, setRequests] = useState([]);
+  
+  useEffect(() => {
+    const q = query(
+      collection(db, 'maintenance_requests'),
+      where('landlordId', '==', landlordId),
+      orderBy('date', 'desc')
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const requestsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setRequests(requestsData);
+    });
+    
+    return unsubscribe;
+  }, [landlordId]);
+  
+  return requests;
+};
+```
+
+##### **Phase 5: Cross-Platform Communication**
+```javascript
+// Deep Linking for Mobile App
+// React Native App.json
+{
+  "expo": {
+    "scheme": "dorminder",
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
+
+// Web App Deep Link Handling
+const handleDeepLink = (action, data) => {
+  const deepLink = `dorminder://${action}?${new URLSearchParams(data)}`;
+  
+  // Try to open mobile app
+  window.location.href = deepLink;
+  
+  // Fallback: Show QR code or download link
+  setTimeout(() => {
+    showMobileAppPrompt();
+  }, 2000);
+};
+
+// Push Notifications (React Native)
+import * as Notifications from 'expo-notifications';
+
+const sendNotification = async (title, body, data) => {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      data,
+    },
+    trigger: null, // Send immediately
+  });
+};
+
+// Web Push Notifications (Landlord Web)
+const requestNotificationPermission = async () => {
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    // Subscribe to push notifications
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: 'your-vapid-key'
+    });
+    
+    // Send subscription to Firebase
+    await addDoc(collection(db, 'push_subscriptions'), {
+      userId: user.uid,
+      subscription,
+      platform: 'web'
+    });
+  }
+};
+```
+
+#### **Key Integration Points**
+
+1. **Shared Firebase Project**: Both apps use the same Firebase project
+2. **Role-based Authentication**: Users are redirected based on their role
+3. **Real-time Updates**: Both apps receive live updates via Firestore listeners
+4. **Cross-platform Notifications**: Push notifications for mobile, web notifications for desktop
+5. **Deep Linking**: Web app can trigger mobile app actions
+6. **Shared Data Models**: Consistent data structure across platforms
+
+#### **Development Workflow**
+
+1. **Setup Firebase Project**: Create shared Firebase project
+2. **Configure Authentication**: Set up email/password and Google OAuth
+3. **Design Database Schema**: Plan Firestore collections and security rules
+4. **Build Landlord Web App**: Create React Vite.js application
+5. **Implement Real-time Features**: Add Firestore listeners to both apps
+6. **Test Cross-platform Flow**: Verify data sync and notifications
+7. **Deploy Applications**: Deploy web app and publish mobile app
+
+#### **Security Considerations**
+
+```javascript
+// Firestore Security Rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Tenants can read announcements and create maintenance requests
+    match /announcements/{announcementId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'landlord';
+    }
+    
+    // Maintenance requests: tenants create, landlords manage
+    match /maintenance_requests/{requestId} {
+      allow read: if request.auth != null && 
+        (resource.data.tenantId == request.auth.uid || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'landlord');
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'landlord';
+    }
+  }
+}
+```
+
+This comprehensive integration strategy ensures seamless communication between your React Native tenant app and React Vite.js landlord web application through a shared Firebase backend.
