@@ -47,6 +47,7 @@ export default function LoginScreen({ navigation }) {
         placeholder="Password"
         placeholderTextColor="#9CA3AF"
         secureTextEntry
+        showPasswordToggle
         value={password}
         onChangeText={setPassword}
       />

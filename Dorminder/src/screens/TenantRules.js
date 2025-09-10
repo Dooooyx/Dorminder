@@ -18,6 +18,8 @@ const TenantRules = ({ navigation }) => {
     setActiveTab(tabId);
     if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
+    } else if (tabId === 'request') {
+      navigation.navigate('TenantRequests');
     }
     // For other tabs, show placeholder content within this screen
     // In the future, these can be separate screens

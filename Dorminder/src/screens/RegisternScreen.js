@@ -8,14 +8,113 @@ import TermsConsent from "../components/TermsConsent";
 export default function RegisterScreen({ navigation }) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTermsVisible, setTermsVisible] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+
+  // Password strength validation
+  const validatePassword = (pwd) => {
+    const errors = [];
+    
+    if (pwd.length < 12) {
+      errors.push("Minimum 12 characters");
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push("At least 1 uppercase letter");
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push("At least 1 lowercase letter");
+    }
+    if (!/\d/.test(pwd)) {
+      errors.push("At least 1 number");
+    }
+    if (!/[!@#$%]/.test(pwd)) {
+      errors.push("At least 1 special character (! @ # $ %)");
+    }
+    
+    return errors;
+  };
+
+  const getPasswordStrength = (pwd) => {
+    const errors = validatePassword(pwd);
+    if (errors.length === 0) return { strength: "Strong", color: "#10B981" };
+    if (errors.length <= 2) return { strength: "Medium", color: "#F59E0B" };
+    return { strength: "Weak", color: "#EF4444" };
+  };
+
+  const checkPasswordRequirement = (pwd, requirement) => {
+    switch (requirement) {
+      case 'length':
+        return pwd.length >= 12;
+      case 'uppercase':
+        return /[A-Z]/.test(pwd);
+      case 'lowercase':
+        return /[a-z]/.test(pwd);
+      case 'number':
+        return /\d/.test(pwd);
+      case 'special':
+        return /[!@#$%]/.test(pwd);
+      default:
+        return false;
+    }
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    setPasswordError("");
+    
+    // Show requirements popup when user starts typing
+    if (text.length > 0 && !showPasswordRequirements) {
+      setShowPasswordRequirements(true);
+    }
+    
+    // Clear confirm password error when password changes
+    if (confirmPassword && text !== confirmPassword) {
+      setConfirmPasswordError("Passwords don't match");
+    } else {
+      setConfirmPasswordError("");
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    
+    if (password && text !== password) {
+      setConfirmPasswordError("Passwords don't match");
+    } else {
+      setConfirmPasswordError("");
+    }
+  };
+
+  const showToast = (message) => {
+    Alert.alert("Password Error", message);
+  };
 
   const handleRegister = () => {
+    // Validate password
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      showToast(`Password requirements not met:\n• ${passwordErrors.join('\n• ')}`);
+      return;
+    }
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match. Please make sure both passwords are identical.");
+      return;
+    }
+
     if (!agreedToTerms) {
       Alert.alert("Error", "Please agree to the Terms & Privacy Policy");
       return;
     }
     Alert.alert("Register", "Landlord registration functionality would go here!");
   };
+
+  const passwordErrors = validatePassword(password);
+  const passwordStrength = getPasswordStrength(password);
 
   return (
     <ScrollView style={styles.scrollContainer}>
@@ -37,17 +136,103 @@ export default function RegisterScreen({ navigation }) {
 
         {/* Form Fields */}
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Full Name:</Text>
-          <InputField placeholder="Full Name" />
+          <Text style={styles.label}>First Name:</Text>
+          <InputField placeholder="First Name" />
+
+          <Text style={styles.label}>Last Name:</Text>
+          <InputField placeholder="Last Name" />
+
+          <Text style={styles.label}>Middle Initial (Optional):</Text>
+          <InputField placeholder="Middle Initial" />
 
           <Text style={styles.label}>Email Address:</Text>
           <InputField placeholder="Email Address" />
 
           <Text style={styles.label}>Password:</Text>
-          <InputField placeholder="Password" secureTextEntry />
+
+          <InputField 
+            placeholder="Password" 
+            secureTextEntry 
+            showPasswordToggle 
+            value={password}
+            onChangeText={handlePasswordChange}
+          />
+          
+          {/* Password Requirements Popup */}
+          {showPasswordRequirements && (
+            <View style={styles.requirementsPopup}>
+              <Text style={styles.requirementsTitle}>Password Requirements:</Text>
+              <View style={styles.requirementItem}>
+                <Text style={[
+                  styles.requirementIcon,
+                  { color: checkPasswordRequirement(password, 'length') ? '#10B981' : '#EF4444' }
+                ]}>
+                  {checkPasswordRequirement(password, 'length') ? '✓' : '✗'}
+                </Text>
+                <Text style={styles.requirementText}>Minimum 12 characters</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <Text style={[
+                  styles.requirementIcon,
+                  { color: checkPasswordRequirement(password, 'uppercase') ? '#10B981' : '#EF4444' }
+                ]}>
+                  {checkPasswordRequirement(password, 'uppercase') ? '✓' : '✗'}
+                </Text>
+                <Text style={styles.requirementText}>At least 1 uppercase letter</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <Text style={[
+                  styles.requirementIcon,
+                  { color: checkPasswordRequirement(password, 'lowercase') ? '#10B981' : '#EF4444' }
+                ]}>
+                  {checkPasswordRequirement(password, 'lowercase') ? '✓' : '✗'}
+                </Text>
+                <Text style={styles.requirementText}>At least 1 lowercase letter</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <Text style={[
+                  styles.requirementIcon,
+                  { color: checkPasswordRequirement(password, 'number') ? '#10B981' : '#EF4444' }
+                ]}>
+                  {checkPasswordRequirement(password, 'number') ? '✓' : '✗'}
+                </Text>
+                <Text style={styles.requirementText}>At least 1 number</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <Text style={[
+                  styles.requirementIcon,
+                  { color: checkPasswordRequirement(password, 'special') ? '#10B981' : '#EF4444' }
+                ]}>
+                  {checkPasswordRequirement(password, 'special') ? '✓' : '✗'}
+                </Text>
+                <Text style={styles.requirementText}>At least 1 special character (! @ # $ %)</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Password Strength Indicator */}
+          {password.length > 0 && (
+            <View style={styles.strengthContainer}>
+              <Text style={styles.strengthLabel}>Password Strength:</Text>
+              <Text style={[styles.strengthText, { color: passwordStrength.color }]}>
+                {passwordStrength.strength}
+              </Text>
+            </View>
+          )}
 
           <Text style={styles.label}>Confirm Password:</Text>
-          <InputField placeholder="Confirm Password" secureTextEntry />
+          <InputField 
+            placeholder="Confirm Password" 
+            secureTextEntry 
+            showPasswordToggle 
+            value={confirmPassword}
+            onChangeText={handleConfirmPasswordChange}
+          />
+          
+          {/* Confirm Password Error */}
+          {confirmPasswordError ? (
+            <Text style={styles.errorText}>{confirmPasswordError}</Text>
+          ) : null}
 
           <Text style={styles.label}>Phone Number:</Text>
           <InputField placeholder="Phone Number" keyboardType="phone-pad" />
@@ -97,7 +282,7 @@ export default function RegisterScreen({ navigation }) {
             <ScrollView style={styles.modalBody}>
               <Text style={styles.modalText}>
                 1. Introduction{'\n\n'}
-                Welcome to Dorminder, a dormitory management platform designed to help landlords manage their properties efficiently. By creating an account and listing your property, you agree to be bound by these Terms and Conditions (“Terms”).{'\n\n'}
+                Welcome to Dorminder, a dormitory management platform designed to help landlords manage their properties efficiently. By creating an account and listing your property, you agree to be bound by these Terms and Conditions ("Terms").{'\n\n'}
                 ⸻{'\n\n'}
                 2. Eligibility{'\n'}
                 • Only legal owners, administrators, or authorized representatives of dormitories may register as landlords.{"\n"}
@@ -135,7 +320,7 @@ export default function RegisterScreen({ navigation }) {
                 • Dorminder is not liable for financial losses, damages, or disputes.{"\n\n"}
                 ⸻{"\n\n"}
                 9. Data and Privacy{"\n"}
-                • Landlord and tenant information will be processed according to Dorminder’s Privacy Policy.{"\n"}
+                • Landlord and tenant information will be processed according to Dorminder's Privacy Policy.{"\n"}
                 • Landlords must use tenant data only for rental-related purposes.{"\n\n"}
                 ⸻{"\n\n"}
                 10. Account Termination{"\n"}
@@ -208,6 +393,70 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 8,
     marginTop: 16,
+  },
+  passwordHint: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  requirementsPopup: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  requirementsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  requirementIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 8,
+    width: 20,
+  },
+  requirementText: {
+    fontSize: 12,
+    color: '#6b7280',
+    flex: 1,
+  },
+  strengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  strengthLabel: {
+    fontSize: 14,
+    color: '#374151',
+    marginRight: 8,
+  },
+  strengthText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    marginBottom: 8,
   },
   registerButton: {
     width: '100%',
