@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import AddTenantModal from '../components/AddTenantModal';
 import TenantActionsMenu from '../components/TenantActionsMenu';
 import TenantDetailsModal from '../components/TenantDetailsModal';
 import SortModal from '../components/SortModal';
+import { tenantService } from '../services/tenantService';
+import { roomService } from '../services/roomService';
+import { useAuth } from '../context/AuthContext';
 
 const Tenant = () => {
+  const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTenants, setSelectedTenants] = useState([]);
   const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
@@ -19,98 +23,53 @@ const Tenant = () => {
     leaseEndDate: '',
     status: ''
   });
-  const [tenants, setTenants] = useState([
-    { 
-      id: 1, 
-      firstName: 'Maria', 
-      lastName: 'Perez', 
-      middleInitial: 'D',
-      email: 'maria.perez@email.com', 
-      contactNumber: '09123456789',
-      roomNumber: 'Room 101', 
-      leaseStartDate: '2025-01-01',
-      leaseEndDate: '2025-12-31', 
-      monthlyRent: 5000, 
-      status: 'Active',
-      emergencyContact: 'Juan Perez - 09123456788',
-      idNumber: 'ID-2025-001',
-      dateJoined: '2025-01-01',
-      idImage: null, // Will be uploaded during registration
-      password: 'TempPass123!' // Temporary password
-    },
-    { 
-      id: 2, 
-      firstName: 'John', 
-      lastName: 'Santos', 
-      middleInitial: 'M',
-      email: 'john.santos@email.com', 
-      contactNumber: '09123456790',
-      roomNumber: 'Room 103', 
-      leaseStartDate: '2025-02-01',
-      leaseEndDate: '2025-07-31', 
-      monthlyRent: 4500, 
-      status: 'Active',
-      emergencyContact: 'Maria Santos - 09123456791',
-      idNumber: 'ID-2025-002',
-      dateJoined: '2025-02-01',
-      idImage: null,
-      password: 'TempPass456!'
-    },
-    { 
-      id: 3, 
-      firstName: 'Ana', 
-      lastName: 'Cruz', 
-      middleInitial: 'L',
-      email: 'ana.cruz@email.com', 
-      contactNumber: '09123456792',
-      roomNumber: 'Room 201', 
-      leaseStartDate: '2025-03-01',
-      leaseEndDate: '2025-08-31', 
-      monthlyRent: 4800, 
-      status: 'Active',
-      emergencyContact: 'Pedro Cruz - 09123456793',
-      idNumber: 'ID-2025-003',
-      dateJoined: '2025-03-01',
-      idImage: null,
-      password: 'TempPass789!'
-    },
-    { 
-      id: 4, 
-      firstName: 'Carlos', 
-      lastName: 'Reyes', 
-      middleInitial: 'S',
-      email: 'carlos.reyes@email.com', 
-      contactNumber: '09123456794',
-      roomNumber: 'Room 203', 
-      leaseStartDate: '2025-01-15',
-      leaseEndDate: '2025-12-15', 
-      monthlyRent: 5500, 
-      status: 'Active',
-      emergencyContact: 'Elena Reyes - 09123456795',
-      idNumber: 'ID-2025-004',
-      dateJoined: '2025-01-15',
-      idImage: null,
-      password: 'TempPass101!'
-    },
-    { 
-      id: 5, 
-      firstName: 'Lisa', 
-      lastName: 'Garcia', 
-      middleInitial: 'M',
-      email: 'lisa.garcia@email.com', 
-      contactNumber: '09123456796',
-      roomNumber: 'Room 301', 
-      leaseStartDate: '2025-04-01',
-      leaseEndDate: '2025-09-30', 
-      monthlyRent: 4700, 
-      status: 'Active',
-      emergencyContact: 'Miguel Garcia - 09123456797',
-      idNumber: 'ID-2025-005',
-      dateJoined: '2025-04-01',
-      idImage: null,
-      password: 'TempPass202!'
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Show loading while authentication is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  const loadTenants = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      if (!user) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+
+      // Use user's UID as propertyId for now (in a real app, you'd have separate property management)
+      const result = await tenantService.getTenantsByProperty(user.uid);
+      
+      if (result.success) {
+        setTenants(result.data);
+      } else {
+        setError(result.error || 'Failed to load tenants');
+        console.error('Error loading tenants:', result.error);
+      }
+    } catch (error) {
+      setError('Failed to load tenants');
+      console.error('Error loading tenants:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  }, [user]);
+
+  // Load tenants on component mount
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadTenants();
+    }
+  }, [authLoading, user, loadTenants]);
 
   const getStatusBadge = (status) => {
     const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
@@ -235,15 +194,14 @@ const Tenant = () => {
     setSelectedTenants([]);
   };
 
-  const handleAddTenant = (tenantData) => {
-    const newTenant = {
-      ...tenantData,
-      id: Math.max(...tenants.map(t => t.id)) + 1,
-      status: 'Active',
-      dateJoined: new Date().toISOString().split('T')[0]
-    };
-    setTenants(prev => [...prev, newTenant]);
-    console.log('Tenant added:', newTenant);
+  const handleAddTenant = async (tenantData) => {
+    try {
+      // The tenant is already created in the modal, just refresh the list
+      await loadTenants();
+      console.log('Tenant added and list refreshed');
+    } catch (error) {
+      console.error('Error refreshing tenant list:', error);
+    }
   };
 
   const handleDeleteTenants = () => {
@@ -385,10 +343,31 @@ const Tenant = () => {
             </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden p-8 text-center">
+              <div className="text-gray-500">Loading tenants...</div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+              <div className="text-red-800">{error}</div>
+              <button 
+                onClick={loadTenants}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
           {/* Tenants Table */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+          {!loading && !error && (
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left">
@@ -522,6 +501,7 @@ const Tenant = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
 

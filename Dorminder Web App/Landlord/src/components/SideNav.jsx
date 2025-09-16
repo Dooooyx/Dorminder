@@ -19,6 +19,7 @@ const SideNav = () => {
     { path: '/rooms', label: 'Rooms', icon: icHome },
     { path: '/tenants', label: 'Tenants', icon: icTenants },
     { path: '/requests', label: 'Requests', icon: icReport },
+    { path: '/rules', label: 'Rules', icon: icTools },
     { path: '/transactions', label: 'Transactions', icon: icTransactions },
     { path: '/tools-reports', label: 'Tools & Reports', icon: icTools },
     { path: '/notifications', label: 'Notifications', icon: icNotifications },
@@ -32,7 +33,7 @@ const SideNav = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 h-screen bg-white shadow-lg flex flex-col" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="w-64 h-screen bg-white shadow-lg flex flex-col sticky top-0" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Logo Section */}
       <div className="flex items-center justify-center py-6 border-b border-gray-200">
         <img 

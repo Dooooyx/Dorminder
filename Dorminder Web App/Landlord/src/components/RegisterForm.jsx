@@ -11,6 +11,7 @@ import TermsModal from './TermsModal';
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
+    middleInitial: '',
     lastName: '',
     email: '',
     password: '',
@@ -122,6 +123,7 @@ const RegisterForm = () => {
     try {
       const result = await authService.register(formData.email, formData.password, {
         firstName: formData.firstName,
+        middleInitial: formData.middleInitial,
         lastName: formData.lastName,
         phone: formData.phoneNumber,
         role: 'landlord', // Set as landlord for this portal
@@ -130,7 +132,12 @@ const RegisterForm = () => {
       });
 
       if (result.success) {
-        navigate('/dashboard');
+        if (result.needsVerification) {
+          // Redirect to email verification page
+          navigate('/email-verification');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(result.error);
       }
@@ -187,8 +194,8 @@ const RegisterForm = () => {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name Fields - Side by Side */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Name Fields - Three columns */}
+          <div className="grid grid-cols-3 gap-4">
             <InputField
               id="firstName"
               label="First Name"
@@ -196,6 +203,14 @@ const RegisterForm = () => {
               value={formData.firstName}
               onChange={handleInputChange('firstName')}
               required
+              showLabel={false}
+            />
+            <InputField
+              id="middleInitial"
+              label="Middle Initial (Optional)"
+              placeholder="M.I."
+              value={formData.middleInitial}
+              onChange={handleInputChange('middleInitial')}
               showLabel={false}
             />
             <InputField

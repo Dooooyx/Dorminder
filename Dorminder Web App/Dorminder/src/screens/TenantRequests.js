@@ -99,8 +99,7 @@ const TenantRequests = ({ navigation }) => {
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'payment') {
-      // Placeholder for payment screen
-      console.log('Payment tab pressed');
+      navigation.navigate('TenantPayment');
     } else if (tabId === 'myroom') {
       // Placeholder for my room screen
       console.log('My Room tab pressed');

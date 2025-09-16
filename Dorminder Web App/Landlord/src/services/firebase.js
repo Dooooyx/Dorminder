@@ -5,16 +5,15 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
 // Firebase configuration
-
 const firebaseConfig = {
-    apiKey: "AIzaSyBvZrrUnDLL-gNhFpsVAhDUE3vJzuyd3Wk",
-    authDomain: "dorminder-web-app-925c1.firebaseapp.com",
-    projectId: "dorminder-web-app-925c1",
-    storageBucket: "dorminder-web-app-925c1.firebasestorage.app",
-    messagingSenderId: "556474579423",
-    appId: "1:556474579423:web:34554fa010f5ecd635ec6a",
-    measurementId: "G-8GYTKZ3KM2"
-  };
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBvZrrUnDLL-gNhFpsVAhDUE3vJzuyd3Wk",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dorminder-web-app-925c1.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dorminder-web-app-925c1",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "dorminder-web-app-925c1.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "556474579423",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:556474579423:web:34554fa010f5ecd635ec6a",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-8GYTKZ3KM2"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

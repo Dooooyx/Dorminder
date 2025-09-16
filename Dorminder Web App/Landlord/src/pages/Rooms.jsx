@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import AddRoomModal from '../components/AddRoomModal';
 import RoomActionsMenu from '../components/RoomActionsMenu';
 import SortModal from '../components/SortModal';
+import { roomService } from '../services/roomService';
+import { tenantService } from '../services/tenantService';
+import { useAuth } from '../context/AuthContext';
 
 const Rooms = () => {
+  const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
@@ -16,18 +20,71 @@ const Rooms = () => {
     leaseEndDate: '',
     status: ''
   });
-  const [rooms, setRooms] = useState([
-    { id: 1, roomNumber: 'Room 101', tenant: 'Maria Perez', leaseDates: 'Jan 1 - Dec 31, 2025', monthlyRent: 5000, status: 'Occupied' },
-    { id: 2, roomNumber: 'Room 102', tenant: '', leaseDates: '', monthlyRent: 5000, status: 'Vacant' },
-    { id: 3, roomNumber: 'Room 103', tenant: 'John Santos', leaseDates: 'Feb 1 - Jul 31, 2025', monthlyRent: 4500, status: 'Occupied' },
-    { id: 4, roomNumber: 'Room 104', tenant: '', leaseDates: '', monthlyRent: 5200, status: 'Maintenance' },
-    { id: 5, roomNumber: 'Room 201', tenant: 'Ana Cruz', leaseDates: 'Mar 1 - Aug 31, 2025', monthlyRent: 4800, status: 'Occupied' },
-    { id: 6, roomNumber: 'Room 202', tenant: '', leaseDates: '', monthlyRent: 5000, status: 'Vacant' },
-    { id: 7, roomNumber: 'Room 203', tenant: 'Carlos Reyes', leaseDates: 'Jan 15 - Dec 15, 2025', monthlyRent: 5500, status: 'Occupied' },
-    { id: 8, roomNumber: 'Room 204', tenant: '', leaseDates: '', monthlyRent: 5100, status: 'Maintenance' },
-    { id: 9, roomNumber: 'Room 301', tenant: 'Lisa Garcia', leaseDates: 'Apr 1 - Sep 30, 2025', monthlyRent: 4700, status: 'Occupied' },
-    { id: 10, roomNumber: 'Room 302', tenant: '', leaseDates: '', monthlyRent: 5300, status: 'Vacant' },
-  ]);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Show loading while authentication is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  const loadRooms = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      if (!user) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+
+      // Get rooms for the property
+      const roomsResult = await roomService.getRoomsByProperty(user.uid);
+      
+      if (roomsResult.success) {
+        // Get tenants to populate tenant information
+        const tenantsResult = await tenantService.getTenantsByProperty(user.uid);
+        const tenants = tenantsResult.success ? tenantsResult.data : [];
+        
+        // Combine room and tenant data
+        const roomsWithTenants = roomsResult.data.map(room => {
+          const tenant = tenants.find(t => t.roomId === room.id);
+          return {
+            id: room.id,
+            roomNumber: room.roomNumber,
+            tenant: tenant ? `${tenant.firstName} ${tenant.lastName}` : '',
+            leaseDates: tenant ? `${new Date(tenant.leaseStartDate).toLocaleDateString()} - ${new Date(tenant.leaseEndDate).toLocaleDateString()}` : '',
+            monthlyRent: room.monthlyRent || 0,
+            status: room.status || 'Vacant',
+            tenantId: tenant ? tenant.id : null
+          };
+        });
+        
+        setRooms(roomsWithTenants);
+      } else {
+        setError(roomsResult.error || 'Failed to load rooms');
+        console.error('Error loading rooms:', roomsResult.error);
+      }
+    } catch (error) {
+      setError('Failed to load rooms');
+      console.error('Error loading rooms:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Load rooms on component mount
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadRooms();
+    }
+  }, [authLoading, user, loadRooms]);
 
   const getStatusBadge = (status) => {
     const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
@@ -146,14 +203,14 @@ const Rooms = () => {
     setSelectedRooms([]);
   };
 
-  const handleAddRoom = (roomData) => {
-    const newRoom = {
-      ...roomData,
-      id: Math.max(...rooms.map(r => r.id)) + 1,
-      roomNumber: `Room ${roomData.roomNumber}` // Format room number properly
-    };
-    setRooms(prev => [...prev, newRoom]);
-    console.log('Room added:', newRoom);
+  const handleAddRoom = async (roomData) => {
+    try {
+      // The room is already created in the modal, just refresh the list
+      await loadRooms();
+      console.log('Room added and list refreshed');
+    } catch (error) {
+      console.error('Error refreshing room list:', error);
+    }
   };
 
   const handleDeleteRooms = () => {
@@ -257,10 +314,31 @@ const Rooms = () => {
             </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden p-8 text-center">
+              <div className="text-gray-500">Loading rooms...</div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+              <div className="text-red-800">{error}</div>
+              <button 
+                onClick={loadRooms}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
           {/* Rooms Table */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+          {!loading && !error && (
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left">
@@ -379,6 +457,7 @@ const Rooms = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
 
@@ -397,6 +476,7 @@ const Rooms = () => {
         onReset={handleReset}
         currentSort={sortOptions}
       />
+
     </div>
   );
 };

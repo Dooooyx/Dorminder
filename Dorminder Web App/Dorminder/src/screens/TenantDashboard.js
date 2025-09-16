@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
@@ -12,11 +14,52 @@ import InfoCard from '../components/InfoCard';
 import AnnouncementCard from '../components/AnnouncementCard';
 import BurgerNav from '../components/BurgerNav';
 import TenantInfoHeader from '../components/TenantInfoHeader';
+import { authService } from '../services/auth';
+import { tenantDataService } from '../services/tenantDataService';
 
 const TenantDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
   const [isBurgerNavVisible, setIsBurgerNavVisible] = React.useState(false);
-  const userName = 'Chrystls';
+  
+  // Dynamic data state
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  // Get current user
+  const currentUser = authService.getCurrentUser();
+  const userName = dashboardData?.tenant?.firstName || 'Loading...';
+
+  // Fetch tenant dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!currentUser) {
+        setError('No user logged in');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+        
+        const result = await tenantDataService.getTenantDashboardData(currentUser.uid);
+        
+        if (result.success) {
+          setDashboardData(result.data);
+        } else {
+          setError(result.error || 'Failed to load dashboard data');
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [currentUser]);
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
@@ -24,6 +67,8 @@ const TenantDashboard = ({ navigation }) => {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
       navigation.navigate('TenantRequests');
+    } else if (tabId === 'payment') {
+      navigation.navigate('TenantPayment');
     }
     // For other tabs, show placeholder content within this screen
     // In the future, these can be separate screens
@@ -78,74 +123,141 @@ const TenantDashboard = ({ navigation }) => {
     // Add your change password logic here
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('Logout pressed');
     setIsBurgerNavVisible(false);
     
-    // Clear any user data/session here
-    // For now, we'll just navigate back to LoginScreen
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    try {
+      await authService.signOut();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
-  const DashboardUI = () => (
-    <ScrollView contentContainerStyle={styles.dashboardContent}>
-      <Text style={styles.greeting}>Hello, <Text style={styles.greetingAccent}>{userName}</Text></Text>
-      <TenantInfoHeader 
-        roomNumber="209" 
-        contractDate="Dec 2025"
-        showLogo={false}
-        headerTitle={null}
-        containerStyle={styles.tenantInfoContainer}
-        roomInfoStyle={styles.tenantRoomInfo}
-      />
+  const DashboardUI = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
+      );
+    }
 
-      {/* Rent Status Card using reusable InfoCard component */}
-      <InfoCard
-        title="Rent Status"
-        leftColumn={[
-          {
-            label: "Current Balance",
-            date: "8/27/25",
-            value: "₱ 2700"
-          }
-        ]}
-        rightColumn={[
-          {
-            label: "Last Payment",
-            date: "8/27/25",
-            value: "₱ 1965"
-          }
-        ]}
-        ctaText="↗ View More"
-        onCtaPress={handleViewMore}
-      />
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
 
-      <Text style={styles.sectionTitle}>Announcements ↗</Text>
+    if (!dashboardData) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No data available</Text>
+        </View>
+      );
+    }
 
-      {/* Water Interruption Announcement */}
-      <AnnouncementCard
-        dateText="24 Aug 10:00"
-        statusLabel="Upcoming"
-        title="Water Interruption"
-        subtitle="August 25, 2025 - 2:00PM to 6:00PM"
-        body="Maintenance by VECO. Please store water in advance. Thx >>"
-        footer="Posted By: Landlord"
-      />
+    const { tenant, room, rent, announcements } = dashboardData;
+    
+    // Debug logging
+    console.log('Dashboard data received:', {
+      tenant,
+      room,
+      rent,
+      announcements
+    });
+    
+    // Format room number
+    const roomNumber = room?.roomNumber || tenant?.roomNumber || 'N/A';
+    
+    // Format lease end date
+    const leaseEndDate = tenantDataService.formatDate(tenant?.leaseEndDate);
+    
+    // Get current balance (calculated based on months since room assignment)
+    const currentBalance = rent?.currentBalance || 0;
+    const balanceDetails = rent?.balanceDetails;
+    
+    console.log('Balance info:', {
+      currentBalance,
+      balanceDetails,
+      monthlyRent: tenant?.monthlyRent,
+      leaseStartDate: tenant?.leaseStartDate
+    });
+    
+    // Format last payment
+    const lastPayment = rent?.lastPayment;
+    const lastPaymentDate = lastPayment ? tenantDataService.formatDate(lastPayment.createdAt) : 'N/A';
+    const lastPaymentAmount = lastPayment ? tenantDataService.formatCurrency(lastPayment.amount) : '₱ 0';
+    
+    // Format next due date and payment amount
+    const nextDueDate = balanceDetails?.nextDueDate ? 
+      tenantDataService.formatDate(balanceDetails.nextDueDate) : 'N/A';
+    const nextPaymentAmount = balanceDetails?.nextPaymentAmount || tenant?.monthlyRent || 0;
 
-      {/* Reminder Announcement */}
-      <AnnouncementCard
-        dateText="24 Aug 10:00"
-        statusLabel="Active"
-        title="Reminder"
-        subtitle="August 25, 2025 - 2:00PM to 6:00PM"
-        body="Please submit rent payment on or before August 30, thank you."
-        footer="Posted By: Landlord"
-      />
-    </ScrollView>
-  );
+    return (
+      <ScrollView contentContainerStyle={styles.dashboardContent}>
+        <Text style={styles.greeting}>Hello, <Text style={styles.greetingAccent}>{tenant?.firstName || 'Tenant'}</Text></Text>
+        <TenantInfoHeader 
+          roomNumber={roomNumber} 
+          contractDate={leaseEndDate}
+          showLogo={false}
+          headerTitle={null}
+          containerStyle={styles.tenantInfoContainer}
+          roomInfoStyle={styles.tenantRoomInfo}
+        />
+
+        {/* Rent Status Card using reusable InfoCard component */}
+        <InfoCard
+          title="Rent Status"
+          leftColumn={[
+            {
+              label: "Current Balance",
+              date: "This Month",
+              value: currentBalance > 0 ? tenantDataService.formatCurrency(currentBalance) : "₱ 0"
+            }
+          ]}
+          rightColumn={[
+            {
+              label: "Next Payment",
+              date: nextDueDate || "N/A",
+              value: tenantDataService.formatCurrency(nextPaymentAmount)
+            }
+          ]}
+          ctaText="↗ View More"
+          onCtaPress={handleViewMore}
+        />
+
+        <Text style={styles.sectionTitle}>Announcements ↗</Text>
+
+        {/* Dynamic Announcements */}
+        {announcements && announcements.length > 0 ? (
+          announcements.map((announcement, index) => (
+            <AnnouncementCard
+              key={announcement.id || index}
+              dateText={tenantDataService.formatDate(announcement.createdAt)}
+              statusLabel={announcement.status || 'Active'}
+              title={announcement.title || 'Announcement'}
+              subtitle={announcement.subtitle || ''}
+              body={announcement.body || announcement.content || ''}
+              footer={`Posted By: ${announcement.postedBy || 'Landlord'}`}
+            />
+          ))
+        ) : (
+          <View style={styles.noAnnouncementsContainer}>
+            <Text style={styles.noAnnouncementsText}>No announcements at this time</Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -252,6 +364,39 @@ const styles = StyleSheet.create({
   placeholderSubtext: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#DC2626',
+    textAlign: 'center',
+  },
+  noAnnouncementsContainer: {
+    padding: 20,
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  noAnnouncementsText: {
+    fontSize: 16,
+    color: '#6b7280',
     textAlign: 'center',
   },
 });

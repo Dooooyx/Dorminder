@@ -26,7 +26,12 @@ const Login = () => {
       if (result.success) {
         // Check if user is a landlord
         if (result.role === 'landlord') {
-          navigate('/dashboard');
+          // Check if email is verified
+          if (result.user.emailVerified) {
+            navigate('/dashboard');
+          } else {
+            navigate('/email-verification');
+          }
         } else {
           setError('Access denied. This portal is for landlords only.');
           await authService.signOut();
@@ -51,7 +56,12 @@ const Login = () => {
       if (result.success) {
         // Check if user is a landlord
         if (result.role === 'landlord') {
-          navigate('/dashboard');
+          // Check if email is verified
+          if (result.user.emailVerified) {
+            navigate('/dashboard');
+          } else {
+            navigate('/email-verification');
+          }
         } else {
           setError('Access denied. This portal is for landlords only.');
           await authService.signOut();

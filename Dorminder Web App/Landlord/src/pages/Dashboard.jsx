@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
+import DashboardHeader from '../components/DashboardHeader';
+import StatsGrid from '../components/StatsGrid';
+import RecentActivity from '../components/RecentActivity';
+import { useProfile } from '../context/ProfileContext';
 
 const Dashboard = () => {
+  const { forceRefresh } = useProfile();
+
+  // Refresh user data when Dashboard loads
+  useEffect(() => {
+    forceRefresh();
+  }, []); // Remove forceRefresh from dependencies to prevent infinite loop
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Sidebar Navigation */}
@@ -11,14 +21,18 @@ const Dashboard = () => {
       {/* Main Content Area */}
       <div className="flex-1 bg-gray-50">
         {/* Top Bar */}
-        <TopNav title="Dashboard" />
+        <TopNav title="Overview" />
         
         {/* Main Content */}
         <div className="p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <p className="text-gray-600">Welcome to your Dorminder dashboard!</p>
-          </div>
+          {/* Dashboard Header */}
+          <DashboardHeader />
+          
+          {/* Stats Grid */}
+          <StatsGrid />
+          
+          {/* Recent Activity */}
+          <RecentActivity />
         </div>
       </div>
     </div>

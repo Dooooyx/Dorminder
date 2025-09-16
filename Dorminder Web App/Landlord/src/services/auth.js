@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -66,20 +67,45 @@ export class AuthService {
         displayName: userData.displayName || userData.firstName + ' ' + userData.lastName
       });
 
+      // Send email verification
+      try {
+        await sendEmailVerification(user);
+        console.log('Email verification sent successfully');
+      } catch (emailError) {
+        console.error('Email verification error:', emailError);
+        // Continue with registration even if email fails
+        // User can resend verification later
+      }
+
       // Create user document in Firestore with role
-      await setDoc(doc(db, 'users', user.uid), {
+      const userDocData = {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
         firstName: userData.firstName || '',
+        middleInitial: userData.middleInitial || '',
         lastName: userData.lastName || '',
         phone: userData.phone || '',
-        role: userData.role || 'tenant', // Set role directly
+        role: userData.role || 'tenant',
+        emailVerified: false,
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
 
-      return { success: true, user };
+      // If landlord, also store property information
+      if (userData.role === 'landlord' && userData.dormName && userData.dormAddress) {
+        userDocData.propertyName = userData.dormName;
+        userDocData.propertyAddress = userData.dormAddress;
+      }
+
+      await setDoc(doc(db, 'users', user.uid), userDocData);
+
+      return { 
+        success: true, 
+        user, 
+        needsVerification: true,
+        message: 'Registration successful! Please check your email to verify your account.'
+      };
     } catch (error) {
       console.error('Registration error:', error);
       return { success: false, error: error.message };
@@ -211,6 +237,40 @@ export class AuthService {
   // Check if user is tenant
   isTenant() {
     return this.userRole === 'tenant';
+  }
+
+  // Check if email is verified
+  isEmailVerified() {
+    return this.currentUser && this.currentUser.emailVerified;
+  }
+
+  // Resend email verification
+  async resendEmailVerification() {
+    try {
+      if (this.currentUser) {
+        await sendEmailVerification(this.currentUser);
+        console.log('Resend email verification sent successfully');
+        return { success: true, message: 'Verification email sent!' };
+      }
+      return { success: false, error: 'No user logged in' };
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to send verification email. ';
+      
+      if (error.code === 'auth/too-many-requests') {
+        errorMessage += 'Too many requests. Please try again later.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage += 'Invalid email address.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage += 'User not found.';
+      } else {
+        errorMessage += 'Please try again or contact support.';
+      }
+      
+      return { success: false, error: errorMessage };
+    }
   }
 }
 

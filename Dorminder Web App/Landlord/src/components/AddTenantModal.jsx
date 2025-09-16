@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InputField from './InputField';
 import PhoneNumberField from './PhoneNumberField';
+import { tenantService } from '../services/tenantService';
+import { roomService } from '../services/roomService';
+import { useAuth } from '../context/AuthContext';
 
 const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -26,16 +30,39 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
 
-  // Available rooms for assignment with rent amounts
-  const availableRooms = [
-    { value: 'Room 102', label: 'Room 102', rent: 5000 },
-    { value: 'Room 202', label: 'Room 202', rent: 5200 },
-    { value: 'Room 302', label: 'Room 302', rent: 4800 },
-    { value: 'Room 400', label: 'Room 400', rent: 5500 },
-    { value: 'Room 401', label: 'Room 401', rent: 5100 },
-    { value: 'Room 402', label: 'Room 402', rent: 5300 }
-  ];
+  // Load vacant rooms when modal opens
+  useEffect(() => {
+    if (isOpen && user) {
+      loadVacantRooms();
+    }
+  }, [isOpen, user]);
+
+  const loadVacantRooms = async () => {
+    try {
+      setLoadingRooms(true);
+      const result = await roomService.getVacantRoomsByProperty(user.uid);
+      
+      if (result.success) {
+        const rooms = result.data.map(room => ({
+          value: room.id,
+          label: room.roomNumber,
+          rent: room.monthlyRent || 0
+        }));
+        setAvailableRooms(rooms);
+      } else {
+        console.error('Error loading vacant rooms:', result.error);
+        setAvailableRooms([]);
+      }
+    } catch (error) {
+      console.error('Error loading vacant rooms:', error);
+      setAvailableRooms([]);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
 
   const paymentStatusOptions = [
     'Paid', 'Pending', 'Overdue', 'Partial'
@@ -153,32 +180,57 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      const tenantData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        middleInitial: formData.middleInitial,
-        contactNumber: formData.contactNumber,
-        emailAddress: formData.emailAddress,
-        emergencyContactName: formData.emergencyContactName,
-        emergencyContactNumber: formData.emergencyContactNumber,
-        accountEmail: formData.accountEmail,
-        password: formData.password,
-        selectedRoom: formData.selectedRoom,
-        rentAmount: formData.rentAmount,
-        initialPaymentStatus: formData.initialPaymentStatus,
-        leaseStartDate: formData.leaseStartDate,
-        leaseEndDate: formData.leaseEndDate,
-        status: formData.status,
-        validIdFile: formData.validIdFile,
-        leaseContractFile: formData.leaseContractFile
-      };
-      
-      onAddTenant(tenantData);
-      handleClose();
+      try {
+        // Find the selected room details
+        const selectedRoom = availableRooms.find(room => room.value === formData.selectedRoom);
+        
+        // Prepare tenant data for service
+        const tenantData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          middleName: formData.middleInitial,
+          contactNumber: formData.contactNumber,
+          emergencyContact: formData.emergencyContactName,
+          emergencyContactNumber: formData.emergencyContactNumber,
+          email: formData.accountEmail,
+          password: formData.password,
+          validIdType: 'Government ID', // Default value
+          validIdNumber: formData.validIdNumber || '',
+          validIdImage: formData.validIdFile || '',
+          propertyId: user.uid, // Use user's UID as propertyId
+          roomId: formData.selectedRoom,
+          roomNumber: selectedRoom ? selectedRoom.label : '',
+          monthlyRent: selectedRoom ? selectedRoom.rent : parseFloat(formData.rentAmount),
+          leaseStartDate: formData.leaseStartDate,
+          leaseEndDate: formData.leaseEndDate,
+          securityDeposit: (selectedRoom ? selectedRoom.rent : parseFloat(formData.rentAmount)) * 2 // 2 months deposit
+        };
+
+        // Create tenant using service
+        const result = await tenantService.createTenant(tenantData);
+        
+        if (result.success) {
+          // Call the parent callback with the result
+          onAddTenant({
+            ...tenantData,
+            id: result.tenantId,
+            userId: result.userId,
+            message: result.message
+          });
+          handleClose();
+        } else {
+          // Handle error
+          console.error('Error creating tenant:', result.error);
+          alert('Error creating tenant: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error in handleSubmit:', error);
+        alert('Error creating tenant: ' + error.message);
+      }
     }
   };
 
@@ -476,11 +528,14 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                   <select
                     value={formData.selectedRoom}
                     onChange={handleInputChange('selectedRoom')}
+                    disabled={loadingRooms}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.selectedRoom ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    } ${loadingRooms ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   >
-                    <option value="">Select a room</option>
+                    <option value="">
+                      {loadingRooms ? 'Loading rooms...' : availableRooms.length === 0 ? 'No vacant rooms available' : 'Select a room'}
+                    </option>
                     {availableRooms.map(room => (
                       <option key={room.value} value={room.value}>{room.label}</option>
                     ))}

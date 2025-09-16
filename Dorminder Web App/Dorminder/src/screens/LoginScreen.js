@@ -1,20 +1,78 @@
 // src/screens/LoginScreen.js
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator } from "react-native";
 import InputField from "../components/InputField";
 import CustomButton from "../components/CustomButton";
+import { authService } from "../services/auth";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const handleLogin = () => {
-    navigation.replace("TenantDashboard");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const unsubscribe = authService.addAuthStateListener((user, role) => {
+      if (user && role === 'tenant') {
+        navigation.replace("TenantDashboard");
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await authService.signIn(email.trim(), password);
+      
+      if (result.success) {
+        // Check if user is a tenant
+        if (result.role === 'tenant') {
+          navigation.replace("TenantDashboard");
+        } else {
+          setError("Access denied. This app is for tenants only.");
+          await authService.signOut();
+        }
+      } else {
+        setError(result.error || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
-  const handleGoogleLogin = () => {
-    Alert.alert("Google Login", "Google login functionality would go here!");
-  };
-  const handleForgotPassword = () => {
-    Alert.alert("Forgot Password", "Password reset functionality would go here!");
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert("Email Required", "Please enter your email address first.");
+      return;
+    }
+
+    try {
+      const result = await authService.resetPassword(email.trim());
+      if (result.success) {
+        Alert.alert(
+          "Password Reset", 
+          "Password reset email sent! Please check your inbox and follow the instructions."
+        );
+      } else {
+        Alert.alert("Error", result.error || "Failed to send reset email. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      console.error("Reset password error:", error);
+    }
   };
 
   return (
@@ -33,14 +91,24 @@ export default function LoginScreen({ navigation }) {
 
       <Text style={styles.title}>LOGIN</Text>
 
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
       <Text style={styles.InputLabel}>Email Address:</Text>
       <InputField
         placeholder="Email Address"
         placeholderTextColor="#9CA3AF"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          setError(""); // Clear error when user types
+        }}
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={!loading}
       />
       <Text style={styles.InputLabel}>Password:</Text>
       <InputField
@@ -49,26 +117,31 @@ export default function LoginScreen({ navigation }) {
         secureTextEntry
         showPasswordToggle
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          setError(""); // Clear error when user types
+        }}
+        editable={!loading}
       />
 
       <View style={styles.linkRow}>
-        <TouchableOpacity onPress={handleForgotPassword}>
-          <Text style={styles.linkMuted}>Forgot password?</Text>
+        <TouchableOpacity onPress={handleForgotPassword} disabled={loading}>
+          <Text style={[styles.linkMuted, loading && styles.disabledText]}>Forgot password?</Text>
         </TouchableOpacity>
       </View>
 
-      <CustomButton title="Log In" onPress={handleLogin} bgColor="#EE6C4D" />
+      <CustomButton 
+        title={loading ? "Logging In..." : "Log In"} 
+        onPress={handleLogin} 
+        bgColor="#EE6C4D"
+        disabled={loading}
+      />
 
-      <Text style={styles.orText}>OR</Text>
-
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-        <Image
-          source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
-          style={styles.googleIcon}
-        />
-        <Text style={styles.googleButtonText}>Log In with Google</Text>
-      </TouchableOpacity>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#EE6C4D" />
+        </View>
+      )}
 
       
     </View>
@@ -123,30 +196,25 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontSize: 12,
   },
-  orText: {
-    textAlign: "center",
-    color: "#6b7280",
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  errorContainer: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "white",
-    width: "100%",
+    marginBottom: 16,
+    alignSelf: "stretch",
   },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
+  errorText: {
+    color: "#DC2626",
+    fontSize: 14,
+    textAlign: "center",
   },
-  googleButtonText: {
-    color: "#1f2937",
-    fontSize: 16,
+  disabledText: {
+    opacity: 0.5,
+  },
+  loadingContainer: {
+    marginTop: 16,
+    alignItems: "center",
   },
 });

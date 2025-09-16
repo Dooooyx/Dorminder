@@ -1,19 +1,14 @@
 import { 
-  createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { auth, db, functions } from './firebase';
+import { auth, db } from './firebase';
 
-// Google Auth Provider
-const googleProvider = new GoogleAuthProvider();
 
 // Role-based authentication service for React Native
 export class AuthService {
@@ -41,9 +36,13 @@ export class AuthService {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.currentUser = user;
-        // Get user role from custom claims
-        const idTokenResult = await user.getIdTokenResult();
-        this.userRole = idTokenResult.claims.role || 'tenant';
+        // Get user role from Firestore document (free tier approach)
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          this.userRole = userDoc.data().role || 'tenant';
+        } else {
+          this.userRole = 'tenant'; // Default role
+        }
       } else {
         this.currentUser = null;
         this.userRole = null;
@@ -52,41 +51,6 @@ export class AuthService {
     });
   }
 
-  // Register new tenant
-  async register(email, password, userData = {}) {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Update user profile
-      await updateProfile(user, {
-        displayName: userData.displayName || userData.firstName + ' ' + userData.lastName
-      });
-
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        phone: userData.phone || '',
-        role: 'tenant', // Default role for mobile app
-        propertyId: userData.propertyId || null,
-        roomNumber: userData.roomNumber || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      // Set custom claims
-      await this.setUserRole(user.uid, 'tenant');
-
-      return { success: true, user };
-    } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, error: error.message };
-    }
-  }
 
   // Sign in with email and password
   async signIn(email, password) {
@@ -94,9 +58,9 @@ export class AuthService {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Get user role from custom claims
-      const idTokenResult = await user.getIdTokenResult();
-      const role = idTokenResult.claims.role || 'tenant';
+      // Get user role from Firestore document (free tier approach)
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const role = userDoc.exists() ? userDoc.data().role : 'tenant';
 
       return { success: true, user, role };
     } catch (error) {
@@ -105,51 +69,20 @@ export class AuthService {
     }
   }
 
-  // Sign in with Google
-  async signInWithGoogle() {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
 
-      // Check if user exists in Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
-      if (!userDoc.exists()) {
-        // Create new user document
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          firstName: user.displayName?.split(' ')[0] || '',
-          lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-          phone: user.phoneNumber || '',
-          role: 'tenant', // Default role for mobile app
-          propertyId: null,
-          roomNumber: '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      }
-
-      // Get user role from custom claims
-      const idTokenResult = await user.getIdTokenResult();
-      const role = idTokenResult.claims.role || 'tenant';
-
-      return { success: true, user, role };
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Set user role (Admin function)
+  // Set user role (Free tier approach - update Firestore document)
   async setUserRole(uid, role) {
     try {
-      const setUserRole = httpsCallable(functions, 'setUserRole');
-      await setUserRole({ uid, role });
+      await updateDoc(doc(db, 'users', uid), {
+        role,
+        updatedAt: new Date()
+      });
       
-      // Force token refresh to get updated claims
-      await auth.currentUser?.getIdToken(true);
+      // Update local role if it's the current user
+      if (this.currentUser && this.currentUser.uid === uid) {
+        this.userRole = role;
+        this.notifyListeners();
+      }
       
       return { success: true };
     } catch (error) {
@@ -232,6 +165,40 @@ export class AuthService {
   // Check if user is landlord
   isLandlord() {
     return this.userRole === 'landlord';
+  }
+
+  // Check if email is verified
+  isEmailVerified() {
+    return this.currentUser && this.currentUser.emailVerified;
+  }
+
+  // Resend email verification
+  async resendEmailVerification() {
+    try {
+      if (this.currentUser) {
+        await sendEmailVerification(this.currentUser);
+        console.log('Resend email verification sent successfully');
+        return { success: true, message: 'Verification email sent!' };
+      }
+      return { success: false, error: 'No user logged in' };
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to send verification email. ';
+      
+      if (error.code === 'auth/too-many-requests') {
+        errorMessage += 'Too many requests. Please try again later.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage += 'Invalid email address.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage += 'User not found.';
+      } else {
+        errorMessage += 'Please try again or contact support.';
+      }
+      
+      return { success: false, error: errorMessage };
+    }
   }
 }
 

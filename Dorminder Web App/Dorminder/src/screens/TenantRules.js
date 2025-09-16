@@ -1,18 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import TenantInfoHeader from '../components/TenantInfoHeader';
 import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
+import { authService } from '../services/auth';
+import { rulesService } from '../services/rulesService';
+import { tenantDataService } from '../services/tenantDataService';
 
 const TenantRules = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('rules');
-  const userName = 'Chrystls';
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [tenantData, setTenantData] = useState(null);
+  
+  // Get current user
+  const currentUser = authService.getCurrentUser();
+  const userName = tenantData?.firstName || 'Tenant';
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
@@ -20,6 +32,8 @@ const TenantRules = ({ navigation }) => {
       navigation.navigate('TenantDashboard');
     } else if (tabId === 'request') {
       navigation.navigate('TenantRequests');
+    } else if (tabId === 'payment') {
+      navigation.navigate('TenantPayment');
     }
     // For other tabs, show placeholder content within this screen
     // In the future, these can be separate screens
@@ -40,95 +54,108 @@ const TenantRules = ({ navigation }) => {
     // Add your menu logic here
   };
 
-  const rulesData = [
-    {
-      icon: '✓',
-      title: 'General Conduct',
-      rules: [
-        'Respect fellow tenants, staff, and visitors at all times.',
-        'Keep hallways, shared spaces, and your room clean and orderly.',
-        'Smoking, vaping, and illegal substances are strictly prohibited inside the premises.'
-      ]
-    },
-    {
-      icon: '🌙',
-      title: 'Quiet Hours',
-      rules: [
-        'Quiet hours are observed from 9:00 PM - 7:00 AM.',
-        'Loud music, shouting, or gatherings are not allowed during quiet hours.'
-      ]
-    },
-    {
-      icon: '👥',
-      title: 'Visitors Policy',
-      rules: [
-        'Visitors are only allowed between 8:00 AM - 9:00 PM.',
-        'Overnight guests are not permitted unless approved by the landlord.',
-        'Tenants are responsible for their guests\' behavior.'
-      ]
-    },
-    {
-      icon: '🔧',
-      title: 'Maintenance & Repairs',
-      rules: [
-        'Report any issues (plumbing, electricity, damage) through the Requests page.',
-        'Do not attempt major repairs on your own.',
-        'Tenants will be charged for damages caused by negligence.'
-      ]
-    },
-    {
-      icon: '$',
-      title: 'Payments & Rent',
-      rules: [
-        'Rent is due on the 30th of every month (unless otherwise stated).',
-        'Late payments may incur penalties as set by the landlord.',
-        'Official receipts will be available in the Payments page.'
-      ]
-    },
-    {
-      icon: '🏢',
-      title: 'Facilities Usage',
-      rules: [
-        'Shared areas (kitchen, laundry, lounge) must be cleaned after use.',
-        'Appliances should be used responsibly to save electricity and water.',
-        'Unauthorized appliances (e.g., hot plates, heavy electronics) are not allowed in rooms.'
-      ]
-    },
-    {
-      icon: '🔒',
-      title: 'Safety & Security',
-      rules: [
-        'Always lock your room and the main gate when leaving.',
-        'Fire exits must remain clear at all times.',
-        'Lost keys must be reported immediately and may require a replacement fee.'
-      ]
-    }
-  ];
+  // Fetch rules data
+  useEffect(() => {
+    const fetchRules = async () => {
+      if (!currentUser) {
+        setError('No user logged in');
+        setLoading(false);
+        return;
+      }
 
-  const RuleSection = ({ icon, title, rules }) => (
-    <View style={styles.ruleSection}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionIcon}>{icon}</Text>
-        <Text style={styles.sectionTitle}>{title}</Text>
+      try {
+        setLoading(true);
+        setError('');
+        
+        // Get tenant data to find property ID
+        console.log('Getting tenant data for user:', currentUser.uid);
+        const tenantResult = await tenantDataService.getTenantData(currentUser.uid);
+        
+        if (!tenantResult.success) {
+          console.log('Tenant not found:', tenantResult.error);
+          setError('Tenant data not found. Please contact your landlord.');
+          setLoading(false);
+          return;
+        }
+        
+        const tenant = tenantResult.data;
+        const propertyId = tenant.propertyId;
+        
+        console.log('Tenant property ID:', propertyId);
+        console.log('Tenant data:', tenant);
+        
+        // Store tenant data for use in TenantInfoHeader
+        setTenantData(tenant);
+        
+        if (!propertyId) {
+          setError('Property ID not found in tenant data');
+          setLoading(false);
+          return;
+        }
+        
+        const result = await rulesService.getRulesByProperty(propertyId);
+        
+        if (result.success) {
+          console.log('Rules data received:', result.data);
+          setRules(result.data);
+        } else {
+          console.log('Rules error:', result.error);
+          setError(result.error || 'Failed to load rules');
+        }
+      } catch (error) {
+        console.error('Error fetching rules:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRules();
+  }, [currentUser]);
+
+  const RuleSection = ({ rule }) => {
+    if (!rule) {
+      return null;
+    }
+    
+    const iconEmoji = rulesService.getIconEmoji(rule.icon || 'checkmark');
+    const ruleTitle = rule.title || 'Untitled Rule';
+    const ruleDescription = rule.description || '';
+    const ruleItems = rule.rules || [];
+    
+    return (
+      <View style={styles.ruleSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionIcon}>{iconEmoji}</Text>
+          <Text style={styles.sectionTitle}>{ruleTitle}</Text>
+        </View>
+        {ruleDescription ? (
+          <Text style={styles.sectionDescription}>{ruleDescription}</Text>
+        ) : null}
+        <View style={styles.rulesList}>
+          {ruleItems.map((ruleItem, index) => {
+            const ruleNumber = (index + 1) + '.';
+            return (
+              <View key={index} style={styles.ruleItem}>
+                <Text style={styles.ruleNumber}>{ruleNumber}</Text>
+                <Text style={styles.ruleText}>{ruleItem || ''}</Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
-      <View style={styles.rulesList}>
-        {rules.map((rule, index) => (
-          <View key={index} style={styles.ruleItem}>
-            <Text style={styles.ruleNumber}>{index + 1}.</Text>
-            <Text style={styles.ruleText}>{rule}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Show TenantInfoHeader only for rules tab, TopNav for other tabs */}
       {activeTab === 'rules' ? (
         <TenantInfoHeader 
-          roomNumber="209" 
-          contractDate="Dec 2025"
+          roomNumber={tenantData?.roomNumber || 'N/A'} 
+          contractDate={tenantData?.leaseEndDate ? 
+            tenantDataService.formatDate(tenantData.leaseEndDate) : 'N/A'
+          }
           showLogo={true}
           headerTitle={null}
           containerStyle={styles.tenantInfoContainer}
@@ -144,7 +171,7 @@ const TenantRules = ({ navigation }) => {
       )}
       
       <View style={styles.content}>
-        {activeTab === 'rules' && (
+        {activeTab === 'rules' ? (
           <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
             <View style={styles.rulesContent}>
               {/* Main Title */}
@@ -155,50 +182,78 @@ const TenantRules = ({ navigation }) => {
                 Welcome to your dormitory! Please read and follow the guidelines below to ensure a safe, respectful, and comfortable living environment.
               </Text>
               
-              {/* Rules Sections */}
-              {rulesData.map((section, index) => (
-                <RuleSection
-                  key={index}
-                  icon={section.icon}
-                  title={section.title}
-                  rules={section.rules}
-                />
-              ))}
-              
-              {/* Note Section */}
-              <View style={styles.noteSection}>
-                <View style={styles.noteHeader}>
-                  <Text style={styles.noteIcon}>📎</Text>
-                  <Text style={styles.noteTitle}>Note</Text>
+              {/* Loading State */}
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#E53E3E" />
+                  <Text style={styles.loadingText}>Loading rules...</Text>
                 </View>
-                <Text style={styles.noteText}>
-                  Rules are subject to updates. Any changes will be announced in the Announcements page.
-                </Text>
-              </View>
+              ) : null}
+              
+              {/* Error State */}
+              {error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+              
+              {/* Rules Sections */}
+              {!loading && !error && rules.length > 0 ? (
+                <View>
+                  {rules.map((rule) => (
+                    <RuleSection
+                      key={rule.id}
+                      rule={rule}
+                    />
+                  ))}
+                  
+                  {/* Note Section */}
+                  <View style={styles.noteSection}>
+                    <View style={styles.noteHeader}>
+                      <Text style={styles.noteIcon}>📎</Text>
+                      <Text style={styles.noteTitle}>Note</Text>
+                    </View>
+                    <Text style={styles.noteText}>
+                      Rules are subject to updates. Any changes will be announced in the Announcements page.
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+              
+              {/* No Rules State */}
+              {!loading && !error && rules.length === 0 ? (
+                <View style={styles.noRulesContainer}>
+                  <Text style={styles.noRulesIcon}>📋</Text>
+                  <Text style={styles.noRulesTitle}>No Rules Available</Text>
+                  <Text style={styles.noRulesText}>
+                    Rules haven't been set up yet. Please contact your landlord.
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </ScrollView>
-        )}
+        ) : null}
         
-        {activeTab === 'myroom' && (
+        {activeTab === 'myroom' ? (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>My Room Screen</Text>
             <Text style={styles.placeholderSubtext}>Room details and management</Text>
           </View>
-        )}
+        ) : null}
         
-        {activeTab === 'request' && (
+        {activeTab === 'request' ? (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>Request Screen</Text>
             <Text style={styles.placeholderSubtext}>Submit maintenance requests</Text>
           </View>
-        )}
+        ) : null}
         
-        {activeTab === 'payment' && (
+        {activeTab === 'payment' ? (
           <View style={styles.placeholder}>
             <Text style={styles.placeholderText}>Payment Screen</Text>
             <Text style={styles.placeholderSubtext}>Manage your payments</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       <BotNav activeTab={activeTab} onTabPress={handleTabPress} />
@@ -324,6 +379,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontStyle: 'italic',
+    marginBottom: 12,
+    marginLeft: 36, // Align with rules list
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 20,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  noRulesContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  noRulesIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  noRulesTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  noRulesText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
 

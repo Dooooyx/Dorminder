@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import ic_show from '../assets/icons/ic_show.png';
 import ic_hide from '../assets/icons/ic_hide.png';
+import { tenantService } from '../services/tenantService';
 
 const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloadContract, onResetPassword }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   // Initialize edited data when modal opens
   React.useEffect(() => {
@@ -69,6 +75,51 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
   const handleClose = () => {
     setIsEditing(false);
     onClose();
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    // Validate passwords
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      const result = await tenantService.updateTenantPassword(tenant.id, newPassword);
+      
+      if (result.success) {
+        setPasswordSuccess('Password updated successfully!');
+        setNewPassword('');
+        setConfirmPassword('');
+        setIsChangingPassword(false);
+      } else {
+        setPasswordError(result.error || 'Failed to update password');
+      }
+    } catch (error) {
+      setPasswordError('Failed to update password');
+      console.error('Error updating password:', error);
+    }
+  };
+
+  const handleCancelPasswordChange = () => {
+    setIsChangingPassword(false);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordSuccess('');
   };
 
   if (!isOpen || !tenant) return null;
@@ -318,11 +369,11 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
                       </button>
                     </div>
                     <button
-                      onClick={onResetPassword}
+                      onClick={() => setIsChangingPassword(true)}
                       className="px-4 py-2 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
                       style={{ fontSize: '20px' }}
                     >
-                      Reset
+                      Change Password
                     </button>
                   </div>
                 </div>
@@ -354,17 +405,75 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
                       </button>
                     </div>
                     <button
-                      onClick={onResetPassword}
+                      onClick={() => setIsChangingPassword(true)}
                       className="px-3 py-1 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
                       style={{ fontSize: '20px' }}
                     >
-                      Reset
+                      Change Password
                     </button>
                   </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Password Change Form */}
+          {isChangingPassword && (
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+              
+              {passwordSuccess && (
+                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                  {passwordSuccess}
+                </div>
+              )}
+              
+              {passwordError && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                  {passwordError}
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleChangePassword}
+                    className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Update Password
+                  </button>
+                  <button
+                    onClick={handleCancelPasswordChange}
+                    className="px-4 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Download Lease Contract */}
           <div className="border-t border-gray-200 pt-4 mt-4">
