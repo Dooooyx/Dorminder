@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "556474579423",
+    "project_id": "dorminder-web-app-925c1",
+    "storage_bucket": "dorminder-web-app-925c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556474579423:android:f876a080f76caf0935ec6a",
+        "android_client_info": {
+          "package_name": "com.dorminder.tenant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "556474579423-81ng6df94m9te0062hv7rqdk6di792r1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBON1bzuvy9_HawZ_DG7nd_vQT8eKoZcRI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "556474579423-81ng6df94m9te0062hv7rqdk6di792r1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
