@@ -128,3 +128,4 @@ If the issue persists:
 2. Review browser console for detailed errors
 3. Test with a fresh Firebase project
 4. Contact Firebase support if needed
+

@@ -134,3 +134,4 @@ Next Payment: ₱5,000
 The rent status display is now more tenant-friendly and informative! 🎉
 
 **Test it out and verify the new labels and calculations work correctly!**
+

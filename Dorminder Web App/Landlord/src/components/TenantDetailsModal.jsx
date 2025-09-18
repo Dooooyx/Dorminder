@@ -303,7 +303,7 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
 
               <div className="flex justify-start items-center py-1">
                 <span className="font-bold text-gray-900" style={{ fontSize: '20px' }}>Email Address:</span>
-                <span className="text-gray-700 font-medium ml-4" style={{ fontSize: '20px' }}>{tenant.emailAddress || 'Not provided'}</span>
+                <span className="text-gray-700 font-medium ml-4" style={{ fontSize: '20px' }}>{tenant.email || 'Not provided'}</span>
               </div>
 
               <div className="flex justify-start items-center py-1">
@@ -355,7 +355,7 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2 flex-1">
                       <span className="text-gray-700 font-medium" style={{ fontSize: '20px' }}>
-                        {showPassword ? (tenant.password || '••••••') : '••••••'}
+                        {showPassword ? 'Password not stored for security' : '••••••'}
                       </span>
                       <button
                         onClick={() => setShowPassword(!showPassword)}
@@ -383,7 +383,7 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
               <div className="space-y-3">
                 <div className="flex justify-start items-center py-1">
                   <span className="font-bold text-gray-900" style={{ fontSize: '20px' }}>Login Email:</span>
-                  <span className="text-gray-700 font-medium ml-4" style={{ fontSize: '20px' }}>{tenant.emailAddress || 'Not provided'}</span>
+                  <span className="text-gray-700 font-medium ml-4" style={{ fontSize: '20px' }}>{tenant.email || 'Not provided'}</span>
                 </div>
 
                 <div className="flex justify-start items-center py-1">
@@ -391,7 +391,7 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
                   <div className="flex items-center space-x-3 ml-4">
                     <div className="flex items-center space-x-2">
                       <span className="text-gray-700 font-medium" style={{ fontSize: '20px' }}>
-                        {showPassword ? (tenant.password || '••••••') : '••••••'}
+                        {showPassword ? 'Password not stored for security' : '••••••'}
                       </span>
                       <button
                         onClick={() => setShowPassword(!showPassword)}

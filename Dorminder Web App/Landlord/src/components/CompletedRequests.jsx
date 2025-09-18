@@ -1,8 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { requestService } from '../services/requestService';
+import { useAuth } from '../context/AuthContext';
 
 const CompletedRequests = () => {
-  // Sample data - in real app, this would come from Firebase/Firestore
-  const completedRequests = [
+  const [completedRequests, setCompletedRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  // Load completed requests on component mount
+  useEffect(() => {
+    if (user) {
+      loadCompletedRequests();
+    }
+  }, [user]);
+
+  const loadCompletedRequests = async () => {
+    try {
+      setLoading(true);
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+      
+      const propertyId = user.uid; // Use user's UID as propertyId
+      const result = await requestService.getRequestsByStatus(propertyId, 'completed');
+      
+      if (result.success) {
+        setCompletedRequests(result.data);
+      } else {
+        console.error('Error loading completed requests:', result.error);
+        // Fallback to empty array
+        setCompletedRequests([]);
+      }
+    } catch (error) {
+      console.error('Error loading completed requests:', error);
+      setCompletedRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback data for development
+  const fallbackData = [
     {
       id: 1,
       title: "Aircon Maintenance",
@@ -38,9 +77,19 @@ const CompletedRequests = () => {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-gray-500">Loading completed requests...</div>
+      </div>
+    );
+  }
+
+  const requestsToShow = completedRequests.length > 0 ? completedRequests : fallbackData;
+
   return (
     <div className="space-y-3">
-      {completedRequests.map((request) => (
+      {requestsToShow.map((request) => (
         <div
           key={request.id}
           className="bg-white rounded-lg shadow-sm border-l-4 border-l-green-500 p-4 hover:shadow-md transition-shadow"

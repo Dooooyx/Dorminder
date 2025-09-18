@@ -59,3 +59,4 @@ if (typeof window !== 'undefined') {
   window.testEmailVerification = runEmailVerificationTest;
   console.log('💡 Run testEmailVerification() in console to test email verification');
 }
+

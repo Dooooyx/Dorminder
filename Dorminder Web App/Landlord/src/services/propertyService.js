@@ -54,3 +54,4 @@ export class PropertyService {
 export const propertyService = new PropertyService();
 
 export default propertyService;
+

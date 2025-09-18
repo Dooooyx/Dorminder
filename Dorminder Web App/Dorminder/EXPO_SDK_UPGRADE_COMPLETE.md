@@ -58,3 +58,4 @@ The Expo development server is now running with SDK 54. You can:
 The SDK upgrade is complete and the app should now work perfectly! 🚀
 
 **Scan the QR code and test the Rules tab - everything should work now!**
+

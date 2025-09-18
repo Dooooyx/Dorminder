@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { requestService } from '../services/requestService';
+import { useAuth } from '../context/AuthContext';
 
 const OngoingRequests = () => {
   const [ongoingRequests, setOngoingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // Load ongoing requests on component mount
   useEffect(() => {
-    loadOngoingRequests();
-  }, []);
+    if (user) {
+      loadOngoingRequests();
+    }
+  }, [user]);
 
   const loadOngoingRequests = async () => {
     try {
       setLoading(true);
-      // In a real app, you'd get the propertyId from context or props
-      const propertyId = 'current-property-id';
-      const result = await requestService.getRequestsByStatus(propertyId, 'ongoing');
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+      
+      const propertyId = user.uid; // Use user's UID as propertyId
+      const result = await requestService.getRequestsByStatus(propertyId, 'pending');
       
       if (result.success) {
         setOngoingRequests(result.data);
@@ -30,7 +38,7 @@ const OngoingRequests = () => {
             description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
             date: "September 9, 2025",
             room: "Room 209",
-            status: "ongoing",
+            status: "pending",
             priority: "high"
           },
           {
@@ -40,7 +48,7 @@ const OngoingRequests = () => {
             description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
             date: "September 9, 2025",
             room: "Room 209",
-            status: "ongoing",
+            status: "pending",
             priority: "medium"
           },
           {
@@ -50,7 +58,7 @@ const OngoingRequests = () => {
             description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
             date: "September 9, 2025",
             room: "Room 209",
-            status: "ongoing",
+            status: "pending",
             priority: "low"
           }
         ]);
@@ -139,7 +147,7 @@ const OngoingRequests = () => {
       
       {ongoingRequests.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">No ongoing requests at the moment.</p>
+          <p className="text-gray-500">No pending requests at the moment.</p>
         </div>
       )}
     </div>

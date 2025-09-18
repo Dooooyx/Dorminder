@@ -146,3 +146,4 @@ firebase deploy --only storage
 5. **Navigate to unauthorized page** to see the new error page
 
 Your app is now fully functional! 🚀✨
+

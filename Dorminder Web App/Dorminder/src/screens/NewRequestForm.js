@@ -9,26 +9,31 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import BotNav from '../components/BotNav';
+import { requestService } from '../services/requestService';
+import { cloudinaryService } from '../services/cloudinaryService';
 
 const NewRequestForm = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [priority, setPriority] = useState('medium');
+  const [loading, setLoading] = useState(false);
 
   const handleTabPress = (tabId) => {
     if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
+    } else if (tabId === 'announcement') {
+      navigation.navigate('AnnouncementsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
       navigation.navigate('TenantRequests');
     } else if (tabId === 'payment') {
-      console.log('Payment tab pressed');
-    } else if (tabId === 'myroom') {
-      console.log('My Room tab pressed');
+      navigation.navigate('TenantPayment');
     }
   };
 
@@ -60,7 +65,7 @@ const NewRequestForm = ({ navigation }) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       Alert.alert('Validation Error', 'Please enter a title');
       return;
@@ -70,17 +75,46 @@ const NewRequestForm = ({ navigation }) => {
       return;
     }
 
-    // Here you would typically submit to your backend
-    Alert.alert(
-      'Success',
-      'Your request has been submitted successfully!',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    setLoading(true);
+    try {
+      let imageUrl = null;
+      
+      // Upload image if selected
+      if (selectedImage) {
+        const uploadResult = await cloudinaryService.uploadImage(selectedImage.uri);
+        imageUrl = uploadResult.secure_url;
+      }
+
+      // Submit request
+      const result = await requestService.submitRequest({
+        title: title.trim(),
+        description: description.trim(),
+        imageUrl: imageUrl,
+        priority: priority
+      });
+
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          'Your request has been submitted successfully! The landlord will see it in their dashboard.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      Alert.alert(
+        'Error',
+        'Failed to submit request. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -136,7 +170,7 @@ const NewRequestForm = ({ navigation }) => {
 
           {/* Upload Image Section */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Upload Image</Text>
+            <Text style={styles.inputLabel}>Upload Image (Optional)</Text>
             <TouchableOpacity
               style={styles.uploadArea}
               onPress={handleImagePicker}
@@ -155,13 +189,42 @@ const NewRequestForm = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
+          {/* Priority Selector */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>Priority Level</Text>
+            <View style={styles.priorityContainer}>
+              {['low', 'medium', 'high'].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  style={[
+                    styles.priorityButton,
+                    priority === level && styles.priorityButtonActive
+                  ]}
+                  onPress={() => setPriority(level)}
+                >
+                  <Text style={[
+                    styles.priorityButtonText,
+                    priority === level && styles.priorityButtonTextActive
+                  ]}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* Submit Button */}
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.submitButtonText}>Submit Request</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit Request</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -311,6 +374,34 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 8,
   },
+  priorityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  priorityButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+  },
+  priorityButtonActive: {
+    backgroundColor: '#FF6B47',
+    borderColor: '#FF6B47',
+  },
+  priorityButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A5568',
+  },
+  priorityButtonTextActive: {
+    color: '#FFFFFF',
+  },
   submitButton: {
     backgroundColor: '#FF6B47',
     paddingVertical: 16,
@@ -324,6 +415,9 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#A0AEC0',
   },
   submitButtonText: {
     color: '#FFFFFF',

@@ -96,13 +96,12 @@ const TenantRequests = ({ navigation }) => {
       setActiveTab(tabId);
     } else if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
+    } else if (tabId === 'announcement') {
+      navigation.navigate('AnnouncementsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'payment') {
       navigation.navigate('TenantPayment');
-    } else if (tabId === 'myroom') {
-      // Placeholder for my room screen
-      console.log('My Room tab pressed');
     }
   };
 

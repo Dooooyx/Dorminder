@@ -133,3 +133,4 @@ Last Payment: ₱3,000 (actual payment amount)
 The balance calculation now properly reflects the time-based rent accumulation! 🎉
 
 **Test it out and verify the balance shows the correct amount based on months since room assignment!**
+

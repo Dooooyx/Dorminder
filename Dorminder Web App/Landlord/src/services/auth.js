@@ -118,6 +118,17 @@ export class AuthService {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Check if email is verified
+      if (!user.emailVerified) {
+        // Sign out the user if email is not verified
+        await signOut(auth);
+        return { 
+          success: false, 
+          error: 'Please verify your email before signing in. Check your inbox for the verification email.',
+          needsVerification: true 
+        };
+      }
+
       // Get user role from Firestore document (free tier approach)
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const role = userDoc.exists() ? userDoc.data().role : 'tenant';
@@ -125,7 +136,25 @@ export class AuthService {
       return { success: true, user, role };
     } catch (error) {
       console.error('Sign in error:', error);
-      return { success: false, error: error.message };
+      
+      // Provide more specific error messages
+      let errorMessage = 'Sign in failed. ';
+      
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage += 'Invalid email or password.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage += 'No account found with this email.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage += 'Incorrect password.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage += 'Too many failed attempts. Please try again later.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage += 'This account has been disabled.';
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -270,6 +299,28 @@ export class AuthService {
       }
       
       return { success: false, error: errorMessage };
+    }
+  }
+
+  // Check if user needs email verification
+  needsEmailVerification() {
+    return this.currentUser && !this.currentUser.emailVerified;
+  }
+
+  // Force sign in without email verification (for testing)
+  async forceSignIn(email, password) {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Get user role from Firestore document
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const role = userDoc.exists() ? userDoc.data().role : 'tenant';
+
+      return { success: true, user, role, emailVerified: user.emailVerified };
+    } catch (error) {
+      console.error('Force sign in error:', error);
+      return { success: false, error: error.message };
     }
   }
 }

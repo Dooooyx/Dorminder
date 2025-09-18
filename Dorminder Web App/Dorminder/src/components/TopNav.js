@@ -12,9 +12,12 @@ const TopNav = ({ userName, onNotificationPress, onProfilePress, onMenuPress }) 
         />
       </View>
       <View style={styles.right}>
-        {/* TODO: Replace with notification bell icon PNG */}
         <TouchableOpacity onPress={onNotificationPress} style={styles.iconButton}>
-          <Text style={styles.icon}>🔔</Text>
+          <Image 
+            source={require('../assets/icons/ic_notification.png')}
+            style={styles.notificationIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
         
         {/* TODO: Replace with user profile avatar icon PNG */}
@@ -62,16 +65,21 @@ const styles = StyleSheet.create({
       marginLeft: 4
     },
     iconButton: { 
-      padding: 8, 
-      marginHorizontal: 6,
-      width: 40,  // Equal size for all icons
-      height: 40, // Equal size for all icons
+      padding: 4, 
+      marginHorizontal: 2,
+      width: 32,  // Reduced size for tighter spacing
+      height: 32, // Reduced size for tighter spacing
       justifyContent: 'center',
       alignItems: 'center'
     },
     menuIcon: {
       width: 24,
       height: 24,
+      tintColor: '#334155', // This will apply color to your PNG icon
+    },
+    notificationIcon: {
+      width: 20,
+      height: 20,
       tintColor: '#334155', // This will apply color to your PNG icon
     },
     icon: { 
@@ -81,15 +89,15 @@ const styles = StyleSheet.create({
     },
     profileButton: { 
       padding: 2,
-      width: 40,  // Equal size for all icons
-      height: 40, // Equal size for all icons
+      width: 32,  // Reduced size to match iconButton
+      height: 32, // Reduced size to match iconButton
       justifyContent: 'center',
       alignItems: 'center'
     },
     profileImage: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 24,
+      height: 24,
+      borderRadius: 12, // Updated to match the smaller size (24/2 = 12)
       backgroundColor: '#4A90E2',
       justifyContent: 'center',
       alignItems: 'center',

@@ -233,3 +233,4 @@ export class RentService {
 }
 
 export const rentService = new RentService();
+

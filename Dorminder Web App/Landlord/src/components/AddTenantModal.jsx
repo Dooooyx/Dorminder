@@ -4,6 +4,7 @@ import PhoneNumberField from './PhoneNumberField';
 import { tenantService } from '../services/tenantService';
 import { roomService } from '../services/roomService';
 import { useAuth } from '../context/AuthContext';
+import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
   const { user } = useAuth();
@@ -11,10 +12,12 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     firstName: '',
     lastName: '',
     middleInitial: '',
-    contactNumber: '',
+    contactNumber: '+63 ',
+    contactNumberStorage: '',
     emailAddress: '',
     emergencyContactName: '',
-    emergencyContactNumber: '',
+    emergencyContactNumber: '+63 ',
+    emergencyContactNumberStorage: '',
     accountEmail: '',
     password: '',
     confirmPassword: '',
@@ -30,6 +33,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
 
@@ -72,12 +77,152 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     'Active', 'Inactive', 'Pending', 'Suspended'
   ];
 
+  // Password validation (same as Register page)
+  const validatePassword = (pwd) => {
+    const errors = [];
+    
+    if (pwd.length < 12) {
+      errors.push("Minimum 12 characters");
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push("At least 1 uppercase letter");
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push("At least 1 lowercase letter");
+    }
+    if (!/\d/.test(pwd)) {
+      errors.push("At least 1 number");
+    }
+    if (!/[!@#$%]/.test(pwd)) {
+      errors.push("At least 1 special character (! @ # $ %)");
+    }
+    
+    return errors;
+  };
+
+  // Format phone number as user types (same as Register page)
+  const formatPhoneAsUserTypes = (input) => {
+    // If input starts with +63, keep it and format the rest
+    if (input.startsWith('+63')) {
+      const digits = input.slice(3).replace(/\D/g, ''); // Get digits after +63
+      const limitedDigits = digits.slice(0, 10); // Limit to 10 digits after +63
+      
+      // Format the digits with spaces: +63 9XXX XXX XXX
+      if (limitedDigits.length <= 3) {
+        return `+63 ${limitedDigits}`;
+      } else if (limitedDigits.length <= 6) {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3)}`;
+      } else {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6)}`;
+      }
+    } else {
+      // If user types without +63, add it
+      const digits = input.replace(/\D/g, '');
+      const limitedDigits = digits.slice(0, 10);
+      
+      if (limitedDigits.length <= 3) {
+        return `+63 ${limitedDigits}`;
+      } else if (limitedDigits.length <= 6) {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3)}`;
+      } else {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6)}`;
+      }
+    }
+  };
+
+  // Convert display format to +63 format for storage
+  const formatPhoneForStorage = (input) => {
+    if (!input) return '';
+    
+    // Remove all non-digit characters
+    const cleanNumber = input.replace(/\D/g, '');
+    
+    // If it's already in +63 format, return as is
+    if (input.startsWith('+63')) {
+      return input;
+    }
+    
+    // If it's a local number (starts with 09), convert to +63 format
+    if (cleanNumber.startsWith('09') && cleanNumber.length === 11) {
+      return '+63' + cleanNumber.slice(1); // Remove 0 and add +63
+    }
+    
+    // If it's 63 format (without +), add the +
+    if (cleanNumber.startsWith('63') && cleanNumber.length === 12) {
+      return '+' + cleanNumber;
+    }
+    
+    // If it's a valid local number, convert to +63
+    if (cleanNumber.length === 11 && cleanNumber.startsWith('09')) {
+      return '+63' + cleanNumber.slice(1);
+    }
+    
+    return input; // Return as is if format is unclear
+  };
+
+  // Handle password change (same as Register page)
+  const handlePasswordChange = (text) => {
+    setFormData(prev => ({ ...prev, password: text }));
+    
+    // Show requirements popup when user starts typing
+    if (text.length > 0 && !showPasswordRequirements) {
+      setShowPasswordRequirements(true);
+    }
+    
+    // Clear confirm password error when password changes
+    if (formData.confirmPassword && text !== formData.confirmPassword) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: "Passwords don't match"
+      }));
+    } else {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: ''
+      }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setFormData(prev => ({ ...prev, confirmPassword: text }));
+    
+    if (formData.password && text !== formData.password) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: "Passwords don't match"
+      }));
+    } else {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: ''
+      }));
+    }
+  };
+
   const handleInputChange = (field) => (e) => {
-    const value = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    let value = e.target.value;
+    
+    // Handle phone number formatting for Philippine numbers
+    if (field === 'contactNumber' || field === 'emergencyContactNumber') {
+      // Format for display with spaces
+      const formatted = formatPhoneAsUserTypes(value);
+      setFormData(prev => ({
+        ...prev,
+        [field]: formatted
+      }));
+      
+      // Store in +63 format for validation and storage
+      const phoneForStorage = formatPhoneForStorage(formatted);
+      setFormData(prev => ({
+        ...prev,
+        [`${field}Storage`]: phoneForStorage
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
 
     // Auto-fill rent amount when room is selected
     if (field === 'selectedRoom') {
@@ -121,10 +266,14 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     }
-    if (!formData.contactNumber.trim()) {
+    // Validate contact number using display format
+    const contactNumberClean = formData.contactNumber.replace(/\D/g, '');
+    if (!formData.contactNumber.trim() || formData.contactNumber === '+63 ') {
       newErrors.contactNumber = 'Contact number is required';
-    } else if (formData.contactNumber.length !== 13 || !formData.contactNumber.startsWith('+63')) {
+    } else if (contactNumberClean.length !== 12 || !contactNumberClean.startsWith('63')) {
       newErrors.contactNumber = 'Contact number must be in format +63XXXXXXXXX';
+    } else if (!contactNumberClean.startsWith('639')) {
+      newErrors.contactNumber = 'Philippine mobile numbers must start with +639';
     }
     if (!formData.emailAddress.trim()) {
       newErrors.emailAddress = 'Email address is required';
@@ -134,10 +283,14 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     if (!formData.emergencyContactName.trim()) {
       newErrors.emergencyContactName = 'Emergency contact name is required';
     }
-    if (!formData.emergencyContactNumber.trim()) {
+    // Validate emergency contact number using display format
+    const emergencyContactNumberClean = formData.emergencyContactNumber.replace(/\D/g, '');
+    if (!formData.emergencyContactNumber.trim() || formData.emergencyContactNumber === '+63 ') {
       newErrors.emergencyContactNumber = 'Emergency contact number is required';
-    } else if (formData.emergencyContactNumber.length !== 13 || !formData.emergencyContactNumber.startsWith('+63')) {
+    } else if (emergencyContactNumberClean.length !== 12 || !emergencyContactNumberClean.startsWith('63')) {
       newErrors.emergencyContactNumber = 'Emergency contact number must be in format +63XXXXXXXXX';
+    } else if (!emergencyContactNumberClean.startsWith('639')) {
+      newErrors.emergencyContactNumber = 'Philippine mobile numbers must start with +639';
     }
 
     // Account Information validation
@@ -146,11 +299,16 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     } else if (!/\S+@\S+\.\S+/.test(formData.accountEmail)) {
       newErrors.accountEmail = 'Please enter a valid email address';
     }
+    // Password validation (same as Register page)
     if (!formData.password.trim()) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else {
+      const passwordErrors = validatePassword(formData.password);
+      if (passwordErrors.length > 0) {
+        newErrors.password = passwordErrors[0]; // Show first error
+      }
     }
+    
     if (!formData.confirmPassword.trim()) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
@@ -193,9 +351,9 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           middleName: formData.middleInitial,
-          contactNumber: formData.contactNumber,
+          contactNumber: formData.contactNumberStorage,
           emergencyContact: formData.emergencyContactName,
-          emergencyContactNumber: formData.emergencyContactNumber,
+          emergencyContactNumber: formData.emergencyContactNumberStorage,
           email: formData.accountEmail,
           password: formData.password,
           validIdType: 'Government ID', // Default value
@@ -211,9 +369,11 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
         };
 
         // Create tenant using service
-        const result = await tenantService.createTenant(tenantData);
+        const result = await tenantService.createTenant(tenantData, user?.email);
         
         if (result.success) {
+          // Show success popup instead of closing immediately
+          setShowSuccessPopup(true);
           // Call the parent callback with the result
           onAddTenant({
             ...tenantData,
@@ -221,7 +381,6 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
             userId: result.userId,
             message: result.message
           });
-          handleClose();
         } else {
           // Handle error
           console.error('Error creating tenant:', result.error);
@@ -234,15 +393,22 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     }
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccessPopup(false);
+    handleClose();
+  };
+
   const handleClose = () => {
     setFormData({
       firstName: '',
       lastName: '',
       middleInitial: '',
-      contactNumber: '',
+      contactNumber: '+63 ',
+      contactNumberStorage: '',
       emailAddress: '',
       emergencyContactName: '',
-      emergencyContactNumber: '',
+      emergencyContactNumber: '+63 ',
+      emergencyContactNumberStorage: '',
       accountEmail: '',
       password: '',
       confirmPassword: '',
@@ -258,6 +424,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     setErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setShowPasswordRequirements(false);
+    setShowSuccessPopup(false);
     onClose();
   };
 
@@ -357,8 +525,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.contactNumber ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="09XX-XXX-YYYY"
-                    maxLength="13"
+                    placeholder="+63 9XX XXX XXXX"
+                    maxLength="17"
                   />
                   {errors.contactNumber && (
                     <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>
@@ -414,8 +582,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       errors.emergencyContactNumber ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="09XX-XXX-YYYY"
-                    maxLength="13"
+                    placeholder="+63 9XX XXX XXXX"
+                    maxLength="17"
                   />
                   {errors.emergencyContactNumber && (
                     <p className="text-red-500 text-sm mt-1">{errors.emergencyContactNumber}</p>
@@ -455,7 +623,7 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                     <input
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={handleInputChange('password')}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
                       className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         errors.password ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -488,7 +656,7 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
-                      onChange={handleInputChange('confirmPassword')}
+                      onChange={(e) => handleConfirmPasswordChange(e.target.value)}
                       className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -513,6 +681,16 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
                   )}
                 </div>
               </div>
+              
+              {/* Password Strength Indicator with Visual Bar */}
+              {formData.password.length > 0 && (
+                <div className="mt-4">
+                  <PasswordStrengthIndicator 
+                    password={formData.password} 
+                    showRequirements={true}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Lease Details Section - Following the image layout exactly */}
@@ -717,6 +895,37 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
           </form>
         </div>
       </div>
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center backdrop-blur-sm bg-white bg-opacity-20">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center shadow-xl">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">✅ Tenant Registered Successfully!</h3>
+            <p className="text-gray-600 mb-6">
+              Email verification sent to tenant's email.
+            </p>
+            <ul className="text-left text-sm text-gray-600 mb-6 space-y-1">
+              <li>✅ Email verification sent to tenant's email</li>
+              <li>✅ Tenant account created with role: "tenant"</li>
+              <li>✅ Tenant can log in using the mobile app after verification</li>
+              <li>✅ Landlord session preserved</li>
+            </ul>
+            <button
+              onClick={handleSuccessClose}
+              className="w-full px-4 py-2 bg-[#61BD45] text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Back to Tenant List
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

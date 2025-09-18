@@ -88,3 +88,4 @@ You can now delete multiple rules at once instead of deleting them individually!
 The bulk delete feature makes rules management much more efficient! 🚀
 
 **Test it out by selecting multiple rules and using the bulk delete feature!**
+

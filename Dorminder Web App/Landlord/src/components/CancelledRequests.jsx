@@ -1,8 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { requestService } from '../services/requestService';
+import { useAuth } from '../context/AuthContext';
 
 const CancelledRequests = () => {
-  // Sample data - in real app, this would come from Firebase/Firestore
-  const cancelledRequests = [
+  const [cancelledRequests, setCancelledRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  // Load cancelled requests on component mount
+  useEffect(() => {
+    if (user) {
+      loadCancelledRequests();
+    }
+  }, [user]);
+
+  const loadCancelledRequests = async () => {
+    try {
+      setLoading(true);
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+      
+      const propertyId = user.uid; // Use user's UID as propertyId
+      const result = await requestService.getRequestsByStatus(propertyId, 'cancelled');
+      
+      if (result.success) {
+        setCancelledRequests(result.data);
+      } else {
+        console.error('Error loading cancelled requests:', result.error);
+        // Fallback to empty array
+        setCancelledRequests([]);
+      }
+    } catch (error) {
+      console.error('Error loading cancelled requests:', error);
+      setCancelledRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback data for development
+  const fallbackData = [
     {
       id: 1,
       title: "Aircon Maintenance",
@@ -38,9 +77,19 @@ const CancelledRequests = () => {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-gray-500">Loading cancelled requests...</div>
+      </div>
+    );
+  }
+
+  const requestsToShow = cancelledRequests.length > 0 ? cancelledRequests : fallbackData;
+
   return (
     <div className="space-y-3 max-w-4xl">
-      {cancelledRequests.map((request) => (
+      {requestsToShow.map((request) => (
         <div
           key={request.id}
           className="bg-white rounded-lg shadow-sm border-l-4 border-l-red-500 p-4 hover:shadow-md transition-shadow"

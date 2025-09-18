@@ -27,6 +27,8 @@ const TenantPayment = ({ navigation }) => {
   const handleTabPress = (tabId) => {
     if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
+    } else if (tabId === 'announcement') {
+      navigation.navigate('AnnouncementsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
@@ -123,10 +125,14 @@ const TenantPayment = ({ navigation }) => {
             styles.downloadIcon,
             bill.status === 'paid' ? styles.downloadIconPaid : styles.downloadIconPending
           ]}>
-            <Text style={[
-              styles.downloadIconText,
-              bill.status === 'paid' ? styles.downloadIconTextPaid : styles.downloadIconTextPending
-            ]}>↓</Text>
+            <Image 
+              source={require('../assets/icons/ic_download.png')}
+              style={[
+                styles.downloadIconImage,
+                bill.status === 'paid' ? styles.downloadIconImagePaid : styles.downloadIconImagePending
+              ]}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </View>
@@ -142,9 +148,7 @@ const TenantPayment = ({ navigation }) => {
         <Text style={styles.paymentDate}>{payment.date}</Text>
       </View>
       <View style={styles.paymentRight}>
-        <View style={styles.checkIcon}>
-          <Text style={styles.checkIconText}>✓</Text>
-        </View>
+        <Text style={styles.checkIconText}>✓</Text>
       </View>
     </View>
   );
@@ -195,20 +199,37 @@ const TenantPayment = ({ navigation }) => {
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
-          style={[styles.tab, activePaymentTab === 'bills' && styles.activeTab]}
+          style={[
+            styles.tab,
+            activePaymentTab === 'bills' && styles.activeTab
+          ]}
           onPress={() => setActivePaymentTab('bills')}
+          activeOpacity={0.7}
         >
-          <Text style={[styles.tabText, activePaymentTab === 'bills' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText,
+            activePaymentTab === 'bills' && styles.activeTabText
+          ]}>
             Bills
           </Text>
+          {activePaymentTab === 'bills' && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
+        
         <TouchableOpacity
-          style={[styles.tab, activePaymentTab === 'payments' && styles.activeTab]}
+          style={[
+            styles.tab,
+            activePaymentTab === 'payments' && styles.activeTab
+          ]}
           onPress={() => setActivePaymentTab('payments')}
+          activeOpacity={0.7}
         >
-          <Text style={[styles.tabText, activePaymentTab === 'payments' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText,
+            activePaymentTab === 'payments' && styles.activeTabText
+          ]}>
             Payments
           </Text>
+          {activePaymentTab === 'payments' && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
       </View>
 
@@ -242,7 +263,7 @@ const TenantPayment = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e3a8a', // Dark blue background
+    backgroundColor: '#293241', // Updated header color
   },
   loadingContainer: {
     flex: 1,
@@ -254,8 +275,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   header: {
-    backgroundColor: '#1e3a8a',
-    paddingVertical: 20,
+    backgroundColor: '#293241',
+    paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
@@ -263,10 +284,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    marginTop: 20,
   },
   summaryCard: {
     backgroundColor: '#fff',
-    margin: 20,
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 0,
     borderRadius: 12,
     padding: 20,
     shadowColor: '#000',
@@ -287,7 +311,7 @@ const styles = StyleSheet.create({
   dormitoryText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1e3a8a',
+    color: '#293241',
     marginBottom: 4,
   },
   accountNumber: {
@@ -328,47 +352,66 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#293241',
+    marginTop: 10,
+    marginBottom: 0,
     marginHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderColor: '#293241',
     padding: 4,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    borderRadius: 6,
+    justifyContent: 'center',
+    position: 'relative',
   },
   activeTab: {
-    backgroundColor: '#1e3a8a',
+    // No background color needed for active tab
   },
   tabText: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#6b7280',
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   activeTabText: {
-    color: '#fff',
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -3,
+    left: 30,
+    right: 30,
+    height: 3,
+    backgroundColor: '#FFFFFF', // White underline
+    borderRadius: 1.5,
   },
   content: {
     flex: 1,
     backgroundColor: '#fff',
-    margin: 20,
-    marginTop: 10,
-    borderRadius: 12,
   },
   scrollContainer: {
     flex: 1,
   },
   billsContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   billCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   billContent: {
     flexDirection: 'row',
@@ -382,7 +425,7 @@ const styles = StyleSheet.create({
   billMonth: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
+    color: '#293241',
     marginBottom: 4,
   },
   billAmount: {
@@ -405,23 +448,24 @@ const styles = StyleSheet.create({
   downloadIconPending: {
     backgroundColor: '#f3f4f6', // Gray background
   },
-  downloadIconText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  downloadIconImage: {
+    width: 16,
+    height: 16,
   },
-  downloadIconTextPaid: {
-    color: '#fff',
+  downloadIconImagePaid: {
+    tintColor: '#fff',
   },
-  downloadIconTextPending: {
-    color: '#6b7280',
+  downloadIconImagePending: {
+    tintColor: '#6b7280',
   },
   paymentsContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   yearText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#293241',
     marginBottom: 16,
   },
   paymentItem: {
@@ -437,7 +481,7 @@ const styles = StyleSheet.create({
   paymentAmount: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1f2937',
+    color: '#293241',
   },
   paymentCenter: {
     flex: 1,
@@ -450,18 +494,10 @@ const styles = StyleSheet.create({
   paymentRight: {
     alignItems: 'flex-end',
   },
-  checkIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#10b981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   checkIconText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#10b981',
   },
 });
 

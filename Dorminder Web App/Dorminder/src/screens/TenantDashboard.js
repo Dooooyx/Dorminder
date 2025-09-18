@@ -63,7 +63,9 @@ const TenantDashboard = ({ navigation }) => {
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'rules') {
+    if (tabId === 'announcement') {
+      navigation.navigate('AnnouncementsScreen');
+    } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
       navigation.navigate('TenantRequests');
@@ -106,9 +108,8 @@ const TenantDashboard = ({ navigation }) => {
   };
 
   const handleContactInfo = () => {
-    console.log('Contact Info pressed');
     setIsBurgerNavVisible(false);
-    // Add your contact info logic here
+    navigation.navigate('ContactInfoScreen');
   };
 
   const handleNotifications = () => {
@@ -118,9 +119,8 @@ const TenantDashboard = ({ navigation }) => {
   };
 
   const handleChangePassword = () => {
-    console.log('Change Password pressed');
     setIsBurgerNavVisible(false);
-    // Add your change password logic here
+    navigation.navigate('ChangePasswordScreen');
   };
 
   const handleLogout = async () => {

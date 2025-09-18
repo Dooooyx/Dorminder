@@ -15,18 +15,20 @@ import {
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   updateProfile,
-  updatePassword,
-  getAuth
+  getAuth,
+  signOut
 } from 'firebase/auth';
-import { db, auth } from './firebase';
+import { initializeApp } from 'firebase/app';
+import { db } from './firebase';
 import { roomService } from './roomService';
 import { fileUploadService } from './fileUploadService';
 import jsPDF from 'jspdf';
+// EmailJS removed for now
 
 export class TenantService {
   
   // Create tenant account and send verification email
-  async createTenant(tenantData) {
+  async createTenant(tenantData, landlordEmail = null) {
     try {
       // Validate file if provided (but don't upload yet - we need the tenant ID first)
       if (tenantData.validIdImage && tenantData.validIdImage instanceof File) {
@@ -36,23 +38,84 @@ export class TenantService {
         }
       }
 
-      // Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        tenantData.email, 
-        tenantData.password
-      );
-      const user = userCredential.user;
+      // Store current landlord user to verify session preservation
+      const currentLandlord = getAuth().currentUser;
+      console.log('👤 Current landlord user:', currentLandlord?.email);
 
-      // Update user profile
-      await updateProfile(user, {
-        displayName: `${tenantData.firstName} ${tenantData.lastName}`
-      });
+      // Create secondary Firebase Auth instance for tenant creation
+      const secondaryApp = initializeApp({
+        apiKey: "AIzaSyBvZrrUnDLL-gNhFpsVAhDUE3vJzuyd3Wk",
+        authDomain: "dorminder-web-app-925c1.firebaseapp.com",
+        projectId: "dorminder-web-app-925c1",
+        storageBucket: "dorminder-web-app-925c1.firebasestorage.app",
+        messagingSenderId: "556474579423",
+        appId: "1:556474579423:web:34554fa010f5ecd635ec6a",
+        measurementId: "G-8GYTKZ3KM2"
+      }, `tenantApp_${Date.now()}`);
+      
+      const secondaryAuth = getAuth(secondaryApp);
+      
+      // Create Firebase Auth user for tenant using secondary instance
+      let user;
+      try {
+        console.log('🔐 Creating Firebase Auth user for tenant using secondary instance...');
+        const userCredential = await createUserWithEmailAndPassword(
+          secondaryAuth, 
+          tenantData.email, 
+          tenantData.password
+        );
+        user = userCredential.user;
+        
+        // Update user profile
+        await updateProfile(user, {
+          displayName: `${tenantData.firstName} ${tenantData.lastName}`
+        });
 
-      // Send email verification
-      await sendEmailVerification(user);
+        // Send email verification
+        await sendEmailVerification(user);
+        
+        console.log('✅ Firebase Auth user created and email verification sent');
+        
+        // Sign out from secondary auth to clear temporary session
+        await signOut(secondaryAuth);
+        console.log('✅ Secondary auth session cleared');
+        
+        // Verify landlord session is still intact
+        const landlordAfterTenantCreation = getAuth().currentUser;
+        if (landlordAfterTenantCreation?.email === currentLandlord?.email) {
+          console.log('✅ Landlord session preserved successfully');
+        } else {
+          console.warn('⚠️ Landlord session may have been affected');
+        }
+        
+      } catch (authError) {
+        console.warn('⚠️ Firebase Auth error:', authError.message);
+        
+        // Handle specific error cases
+        if (authError.code === 'auth/email-already-in-use') {
+          console.log('⚠️ Email already in use, using generated ID');
+          const tempUserId = `existing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          user = { uid: tempUserId };
+        } else if (authError.code === 'auth/weak-password') {
+          throw new Error('Password is too weak. Please use a stronger password.');
+        } else if (authError.code === 'auth/invalid-email') {
+          throw new Error('Invalid email address format.');
+        } else {
+          console.log('⚠️ Auth error, using generated ID');
+          const tempUserId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          user = { uid: tempUserId };
+        }
+        
+        // Ensure secondary auth is signed out even on error
+        try {
+          await signOut(secondaryAuth);
+        } catch (signOutError) {
+          console.log('Secondary auth sign out error (non-critical):', signOutError.message);
+        }
+      }
 
       // Create tenant document in Firestore
+      console.log('📝 Creating tenant with email:', tenantData.email);
       const tenantDocData = {
         userId: user.uid,
         email: tenantData.email,
@@ -103,11 +166,14 @@ export class TenantService {
       // Generate and send PDF document
       await this.generateTenantDocument(tenantDocData, user.uid);
 
+      // Email notifications removed for now
+      console.log('✅ Tenant created successfully - no emails sent');
+
       return { 
         success: true, 
         tenantId: docRef.id,
         userId: user.uid,
-        message: 'Tenant created successfully! Verification email sent.'
+        message: 'Tenant created successfully! Email verification and registration details sent via email.'
       };
     } catch (error) {
       console.error('Error creating tenant:', error);

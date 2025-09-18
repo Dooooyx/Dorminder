@@ -60,3 +60,4 @@ const iconEmoji = rulesService.getIconEmoji(rule.icon || 'checkmark');
    ```
 
 The JSX error should now be resolved! 🚀
+
