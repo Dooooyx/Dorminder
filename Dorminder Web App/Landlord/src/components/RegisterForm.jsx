@@ -57,10 +57,10 @@ const RegisterForm = () => {
     // Validate phone number
     if (field === 'phoneNumber') {
       const phoneNumber = e.target.value;
-      if (phoneNumber && phoneNumber.length !== 11) {
-        setPhoneError('Phone number must be 11 digits starting with 09');
-      } else if (phoneNumber && !phoneNumber.startsWith('09')) {
-        setPhoneError('Phone number must start with 09');
+      if (phoneNumber && phoneNumber.length !== 13) {
+        setPhoneError('Phone number must be in format +63XXXXXXXXX');
+      } else if (phoneNumber && !phoneNumber.startsWith('+63')) {
+        setPhoneError('Phone number must start with +63');
       } else {
         setPhoneError('');
       }
@@ -107,9 +107,9 @@ const RegisterForm = () => {
     }
 
     // Phone number validation
-    if (formData.phoneNumber && (formData.phoneNumber.length !== 11 || !formData.phoneNumber.startsWith('09'))) {
-      setError('Phone number must be 11 digits starting with 09');
-      setPhoneError('Phone number must be 11 digits starting with 09');
+    if (formData.phoneNumber && (formData.phoneNumber.length !== 13 || !formData.phoneNumber.startsWith('+63'))) {
+      setError('Phone number must be in format +63XXXXXXXXX');
+      setPhoneError('Phone number must be in format +63XXXXXXXXX');
       setLoading(false);
       return;
     }

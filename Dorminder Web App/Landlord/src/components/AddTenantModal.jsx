@@ -123,8 +123,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     }
     if (!formData.contactNumber.trim()) {
       newErrors.contactNumber = 'Contact number is required';
-    } else if (formData.contactNumber.length !== 11 || !formData.contactNumber.startsWith('09')) {
-      newErrors.contactNumber = 'Contact number must be 11 digits starting with 09';
+    } else if (formData.contactNumber.length !== 13 || !formData.contactNumber.startsWith('+63')) {
+      newErrors.contactNumber = 'Contact number must be in format +63XXXXXXXXX';
     }
     if (!formData.emailAddress.trim()) {
       newErrors.emailAddress = 'Email address is required';
@@ -136,8 +136,8 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
     }
     if (!formData.emergencyContactNumber.trim()) {
       newErrors.emergencyContactNumber = 'Emergency contact number is required';
-    } else if (formData.emergencyContactNumber.length !== 11 || !formData.emergencyContactNumber.startsWith('09')) {
-      newErrors.emergencyContactNumber = 'Emergency contact number must be 11 digits starting with 09';
+    } else if (formData.emergencyContactNumber.length !== 13 || !formData.emergencyContactNumber.startsWith('+63')) {
+      newErrors.emergencyContactNumber = 'Emergency contact number must be in format +63XXXXXXXXX';
     }
 
     // Account Information validation

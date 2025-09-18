@@ -12,30 +12,61 @@ const PhoneNumberField = ({
   inputClassName = '',
   showLabel = true
 }) => {
-  const [displayValue, setDisplayValue] = useState(value);
-
   // Format phone number as user types
   const formatPhoneNumber = (input) => {
-    // Remove all non-digit characters
-    const phoneNumber = input.replace(/\D/g, '');
-    
-    // Limit to 11 digits (09XX-XXX-YYYY)
-    const limitedNumber = phoneNumber.slice(0, 11);
-    
-    // Format: 09XX-XXX-YYYY
-    if (limitedNumber.length <= 4) {
-      return limitedNumber;
-    } else if (limitedNumber.length <= 7) {
-      return `${limitedNumber.slice(0, 4)}-${limitedNumber.slice(4)}`;
+    // If input starts with +63, keep it and format the rest
+    if (input.startsWith('+63')) {
+      const digits = input.slice(3).replace(/\D/g, ''); // Get digits after +63
+      const limitedDigits = digits.slice(0, 10); // Limit to 10 digits after +63
+      
+      // Format the digits with spaces: +63 9XXX XXX XXX
+      if (limitedDigits.length <= 3) {
+        return `+63 ${limitedDigits}`;
+      } else if (limitedDigits.length <= 6) {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3)}`;
+      } else {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6)}`;
+      }
     } else {
-      return `${limitedNumber.slice(0, 4)}-${limitedNumber.slice(4, 7)}-${limitedNumber.slice(7)}`;
+      // If user types without +63, add it
+      const digits = input.replace(/\D/g, '');
+      const limitedDigits = digits.slice(0, 10);
+      
+      if (limitedDigits.length <= 3) {
+        return `+63 ${limitedDigits}`;
+      } else if (limitedDigits.length <= 6) {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3)}`;
+      } else {
+        return `+63 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6)}`;
+      }
     }
   };
+
+  // Convert +63 format to display format
+  const convertToDisplayFormat = (phoneNumber) => {
+    if (!phoneNumber) return '+63 ';
+    
+    // If it's in +63XXXXXXXXX format, convert to +63 XXX XXX XXX
+    if (phoneNumber.startsWith('+63') && phoneNumber.length === 13) {
+      const digits = phoneNumber.slice(3);
+      return `+63 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    }
+    
+    // If it's already in the new format, return as is
+    if (phoneNumber.startsWith('+63 ')) {
+      return phoneNumber;
+    }
+    
+    // Default to +63 prefix
+    return '+63 ';
+  };
+
+  const [displayValue, setDisplayValue] = useState(convertToDisplayFormat(value));
 
   // Validate phone number format
   const validatePhoneNumber = (phoneNumber) => {
     const cleanNumber = phoneNumber.replace(/\D/g, '');
-    return cleanNumber.length === 11 && cleanNumber.startsWith('09');
+    return cleanNumber.length === 12 && cleanNumber.startsWith('63');
   };
 
   const handleChange = (e) => {
@@ -44,11 +75,20 @@ const PhoneNumberField = ({
     
     setDisplayValue(formatted);
     
-    // Call parent onChange with the raw number (without formatting)
+    // Convert to +63XXXXXXXXX format for storage
     const rawNumber = formatted.replace(/\D/g, '');
+    let phoneNumberForStorage = rawNumber;
+    
+    // Ensure it's in +63XXXXXXXXX format
+    if (rawNumber.startsWith('63') && rawNumber.length === 12) {
+      phoneNumberForStorage = '+' + rawNumber;
+    } else if (rawNumber.length === 10) {
+      phoneNumberForStorage = '+63' + rawNumber;
+    }
+    
     onChange({
       target: {
-        value: rawNumber
+        value: phoneNumberForStorage
       }
     });
   };
@@ -73,12 +113,12 @@ const PhoneNumberField = ({
           type="tel"
           id={id}
           className={`w-full px-4 py-3 text-xl font-normal bg-gray-100 border-0 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${inputClassName}`}
-          placeholder={placeholder || "09XX-XXX-YYYY"}
+          placeholder={placeholder || "+63 9XX XXX XXXX"}
           value={displayValue}
           onChange={handleChange}
           onBlur={handleBlur}
           required={required}
-          maxLength={13} // 09XX-XXX-YYYY = 13 characters including dashes
+          maxLength={17} // +63 XXX XXX XXX = 17 characters including spaces
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +129,7 @@ const PhoneNumberField = ({
       
       {/* Format hint */}
       <div className="mt-1 text-sm text-gray-500">
-        Format: 09XX-XXX-YYYY (11 digits)
+        Format: +63 9XX XXX XXXX
       </div>
     </div>
   );

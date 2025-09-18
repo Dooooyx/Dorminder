@@ -1,9 +1,10 @@
 // src/screens/RegisterScreen.js
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, Modal } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, Modal, TextInput } from "react-native";
 import InputField from "../components/InputField";
 import CustomButton from "../components/CustomButton";
 import TermsConsent from "../components/TermsConsent";
+import { formatPhoneAsUserTypes, formatPhoneForStorage, validatePhilippinePhone } from "../utils/phoneUtils";
 
 export default function RegisterScreen({ navigation }) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -13,6 +14,8 @@ export default function RegisterScreen({ navigation }) {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneDisplay, setPhoneDisplay] = useState("+63 ");
 
   // Password strength validation
   const validatePassword = (pwd) => {
@@ -42,6 +45,16 @@ export default function RegisterScreen({ navigation }) {
     if (errors.length === 0) return { strength: "Strong", color: "#10B981" };
     if (errors.length <= 2) return { strength: "Medium", color: "#F59E0B" };
     return { strength: "Weak", color: "#EF4444" };
+  };
+
+  // Handle phone number input
+  const handlePhoneChange = (text) => {
+    const formatted = formatPhoneAsUserTypes(text);
+    setPhoneDisplay(formatted);
+    
+    // Store in +63 format
+    const phoneForStorage = formatPhoneForStorage(formatted);
+    setPhoneNumber(phoneForStorage);
   };
 
   const checkPasswordRequirement = (pwd, requirement) => {
@@ -235,7 +248,17 @@ export default function RegisterScreen({ navigation }) {
           ) : null}
 
           <Text style={styles.label}>Phone Number:</Text>
-          <InputField placeholder="Phone Number" keyboardType="phone-pad" />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="+63 9XX XXX XXXX"
+              keyboardType="phone-pad"
+              value={phoneDisplay}
+              onChangeText={handlePhoneChange}
+              maxLength={17}
+            />
+          </View>
+          <Text style={styles.phoneHint}>Format: +63 9XX XXX XXXX</Text>
 
           <Text style={styles.label}>Boarding House/Dorm Name:</Text>
           <InputField placeholder="Boarding House/Dorm Name" />
@@ -512,5 +535,11 @@ const styles = StyleSheet.create({
   modalCloseText: {
     color: 'white',
     fontWeight: '600',
+  },
+  phoneHint: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+    marginBottom: 8,
   },
 });

@@ -55,13 +55,15 @@ const Rooms = () => {
         // Combine room and tenant data
         const roomsWithTenants = roomsResult.data.map(room => {
           const tenant = tenants.find(t => t.roomId === room.id);
+          // Determine status based on whether tenant is assigned
+          const status = tenant ? 'Occupied' : 'Vacant';
           return {
             id: room.id,
             roomNumber: room.roomNumber,
             tenant: tenant ? `${tenant.firstName} ${tenant.lastName}` : '',
             leaseDates: tenant ? `${new Date(tenant.leaseStartDate).toLocaleDateString()} - ${new Date(tenant.leaseEndDate).toLocaleDateString()}` : '',
             monthlyRent: room.monthlyRent || 0,
-            status: room.status || 'Vacant',
+            status: status,
             tenantId: tenant ? tenant.id : null
           };
         });
@@ -240,6 +242,27 @@ const Rooms = () => {
     }
   };
 
+  const handleSyncRoomStatus = async () => {
+    try {
+      if (!user) {
+        alert('User not authenticated');
+        return;
+      }
+
+      const result = await roomService.syncRoomStatus(user.uid);
+      if (result.success) {
+        alert('Room statuses synced successfully!');
+        // Reload rooms to show updated statuses
+        await loadRooms();
+      } else {
+        alert(`Failed to sync room statuses: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error syncing room status:', error);
+      alert('Error syncing room statuses');
+    }
+  };
+
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Sidebar Navigation */}
@@ -291,6 +314,15 @@ const Rooms = () => {
 
               {/* Action Buttons */}
               <div className="flex space-x-3">
+                <button 
+                  onClick={handleSyncRoomStatus}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Sync Status</span>
+                </button>
                 <button 
                   onClick={() => setIsAddRoomModalOpen(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"

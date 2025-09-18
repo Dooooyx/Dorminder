@@ -234,6 +234,46 @@ export class RoomService {
     }
   }
 
+  // Sync room status based on tenant assignments
+  async syncRoomStatus(propertyId) {
+    try {
+      // Get all rooms for the property
+      const roomsResult = await this.getRoomsByProperty(propertyId);
+      if (!roomsResult.success) {
+        return { success: false, error: roomsResult.error };
+      }
+
+      // Get all tenants for the property
+      const { tenantService } = await import('./tenantService');
+      const tenantsResult = await tenantService.getTenantsByProperty(propertyId);
+      if (!tenantsResult.success) {
+        return { success: false, error: tenantsResult.error };
+      }
+
+      const tenants = tenantsResult.data;
+      const occupiedRoomIds = new Set(tenants.map(tenant => tenant.roomId).filter(Boolean));
+
+      // Update room statuses
+      const updatePromises = roomsResult.data.map(async (room) => {
+        const shouldBeOccupied = occupiedRoomIds.has(room.id);
+        const currentStatus = room.status;
+        
+        if (shouldBeOccupied && currentStatus !== 'Occupied') {
+          return this.updateRoomStatus(room.id, 'Occupied');
+        } else if (!shouldBeOccupied && currentStatus !== 'Vacant') {
+          return this.updateRoomStatus(room.id, 'Vacant');
+        }
+        return { success: true };
+      });
+
+      await Promise.all(updatePromises);
+      return { success: true };
+    } catch (error) {
+      console.error('Error syncing room status:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Delete a room
   async deleteRoom(roomId) {
     try {
