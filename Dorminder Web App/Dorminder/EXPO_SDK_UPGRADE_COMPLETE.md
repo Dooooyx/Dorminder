@@ -59,3 +59,4 @@ The SDK upgrade is complete and the app should now work perfectly! 🚀
 
 **Scan the QR code and test the Rules tab - everything should work now!**
 
+

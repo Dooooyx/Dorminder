@@ -38,3 +38,4 @@ npx expo start
 
 The authentication should now work with Firebase!
 
+

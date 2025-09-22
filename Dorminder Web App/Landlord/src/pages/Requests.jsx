@@ -3,7 +3,6 @@ import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import OngoingRequests from '../components/OngoingRequests';
 import CompletedRequests from '../components/CompletedRequests';
-import CancelledRequests from '../components/CancelledRequests';
 
 const Requests = () => {
   const [activeTab, setActiveTab] = useState('ongoing');
@@ -28,16 +27,6 @@ const Requests = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       )
-    },
-    { 
-      id: 'cancelled', 
-      label: 'Cancelled Requests', 
-      count: 11,
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      )
     }
   ];
 
@@ -47,8 +36,6 @@ const Requests = () => {
         return <OngoingRequests />;
       case 'completed':
         return <CompletedRequests />;
-      case 'cancelled':
-        return <CancelledRequests />;
       default:
         return <OngoingRequests />;
     }

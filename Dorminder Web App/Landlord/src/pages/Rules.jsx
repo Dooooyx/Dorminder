@@ -225,14 +225,12 @@ const Rules = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <SideNav />
+    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+      <SideNav />
+      <div className="flex-1 bg-gray-50">
+        <TopNav title="Rules Management" />
         
-        <div className="flex-1 ml-64">
-          <TopNav />
-          
-          <div className="p-8">
+        <div className="p-8">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Rules Management</h1>
@@ -360,7 +358,6 @@ const Rules = () => {
             )}
           </div>
         </div>
-      </div>
 
       {/* Add/Edit Rule Modal */}
       {(isAddModalOpen || isEditModalOpen) && (
