@@ -84,15 +84,18 @@ export class RequestService {
     }
   }
 
-  // Get requests by status
-  async getRequestsByStatus(propertyId, status) {
+  // Get requests by status (optionally filter by category)
+  async getRequestsByStatus(propertyId, status, category) {
     try {
-      const q = query(
-        collection(db, 'requests'),
+      const constraints = [
         where('propertyId', '==', propertyId),
         where('status', '==', status),
         orderBy('createdAt', 'desc')
-      );
+      ];
+      if (category) {
+        constraints.splice(2, 0, where('category', '==', category));
+      }
+      const q = query(collection(db, 'requests'), ...constraints);
       const querySnapshot = await getDocs(q);
       const requests = [];
       
@@ -230,5 +233,7 @@ export class RequestService {
 }
 
 export const requestService = new RequestService();
+
+
 
 

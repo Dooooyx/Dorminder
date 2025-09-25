@@ -4,7 +4,7 @@
     "slug": "Dorminder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/logo/logo_dorminder.png",
+    "icon": "./src/assets/icons/ic_dashboard.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -18,14 +18,22 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff",
-        "googleServicesFile": "./google-services.json"
+        "backgroundColor": "#ffffff"
       },
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
-      
+    },
+    "extra": {
+      "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyBvZrrUnDLL-gNhFpsVAhDUE3vJzuyd3Wk",
+      "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "dorminder-web-app-925c1.firebaseapp.com",
+      "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "dorminder-web-app-925c1",
+      "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "dorminder-web-app-925c1.firebasestorage.app",
+      "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "556474579423",
+      "EXPO_PUBLIC_FIREBASE_APP_ID": "1:556474579423:web:34554fa010f5ecd635ec6a",
+      "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8GYTKZ3KM2"
     }
   }
 }

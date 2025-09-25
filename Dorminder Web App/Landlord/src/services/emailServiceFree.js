@@ -95,3 +95,4 @@ The system will:
 - If EmailJS fails, log the data to console for manual sending
 - Continue with tenant registration even if emails fail
 */
+    

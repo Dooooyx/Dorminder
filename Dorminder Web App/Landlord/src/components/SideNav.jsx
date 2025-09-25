@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logoImage from '../assets/logo/logo_dorminder.png';
 import icDashboard from '../assets/SidenavIcons/ic_dashboard.png';
 import icHome from '../assets/SidenavIcons/ic_home.png';
@@ -13,12 +13,15 @@ import icLogout from '../assets/SidenavIcons/ic_logout.png';
 
 const SideNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [requestsOpen, setRequestsOpen] = useState(location.pathname.startsWith('/requests'));
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: icDashboard },
     { path: '/rooms', label: 'Rooms', icon: icHome },
     { path: '/tenants', label: 'Tenants', icon: icTenants },
-    { path: '/requests', label: 'Requests', icon: icReport },
+    // Requests will be rendered with a dropdown below
+    { path: '/requests', label: 'Requests', icon: icReport, hasChildren: true },
     { path: '/rules', label: 'Rules', icon: icTools },
     { path: '/transactions', label: 'Transactions', icon: icTransactions },
     { path: '/tools-reports', label: 'Tools & Reports', icon: icTools },
@@ -48,21 +51,71 @@ const SideNav = () => {
         <ul className="space-y-2">
           {navItems.map((item) => (
             <li key={item.path}>
-              <Link
-                to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                }`}
-              >
-                <img 
-                  src={item.icon} 
-                  alt={item.label} 
-                  className="w-5 h-5"
-                />
-                <span className="text-sm font-medium">{item.label}</span>
-              </Link>
+              {item.hasChildren ? (
+                <>
+                  <button
+                    onClick={() => setRequestsOpen((o) => !o)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                      location.pathname.startsWith(item.path)
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-3">
+                      <img src={item.icon} alt={item.label} className="w-5 h-5" />
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </span>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${requestsOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {requestsOpen && (
+                    <ul className="mt-1 ml-10 space-y-1">
+                      <li>
+                        <button
+                          onClick={() => navigate('/requests?category=request')}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                            location.pathname === '/requests' && (new URLSearchParams(location.search).get('category') || 'request') === 'request'
+                              ? 'bg-orange-50 text-orange-700'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Request
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => navigate('/requests?category=report')}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                            location.pathname === '/requests' && new URLSearchParams(location.search).get('category') === 'report'
+                              ? 'bg-orange-50 text-orange-700'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Report
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-gray-100 text-gray-800'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                  }`}
+                >
+                  <img src={item.icon} alt={item.label} className="w-5 h-5" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>

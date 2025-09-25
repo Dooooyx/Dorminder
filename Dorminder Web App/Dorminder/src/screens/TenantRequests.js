@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,83 +13,28 @@ import BotNav from '../components/BotNav';
 import RequestCard from '../components/RequestCard';
 import RequestTabBar from '../components/RequestTabBar';
 import FloatingActionButton from '../components/FloatingActionButton';
+import { authService } from '../services/auth';
+import { requestService } from '../services/requestService';
 
 const { width } = Dimensions.get('window');
 
 const TenantRequests = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('ongoing');
-  const [userName] = useState('Chrystis');
+  const [requests, setRequests] = useState([]);
 
-  // Mock data for ongoing requests
-  const ongoingRequests = [
-    {
-      id: '1',
-      type: 'Room Cleaning',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'ongoing',
-      priority: 'medium',
-      description: 'General room cleaning and organization',
-    },
-    {
-      id: '2',
-      type: 'Airconditioning Cleaning',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'ongoing',
-      priority: 'high',
-      description: 'AC unit needs thorough cleaning',
-    },
-    {
-      id: '3',
-      type: 'Door Repair',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'ongoing',
-      priority: 'low',
-      description: 'Door handle is loose and needs fixing',
-    },
-  ];
-
-  // Mock data for completed requests
-  const completedRequests = [
-    {
-      id: '4',
-      type: 'Room Cleaning',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'completed',
-      priority: 'medium',
-      description: 'General room cleaning and organization',
-    },
-    {
-      id: '5',
-      type: 'Airconditioning Cleaning',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'completed',
-      priority: 'high',
-      description: 'AC unit needs thorough cleaning',
-    },
-    {
-      id: '6',
-      type: 'Airconditioning Maintenance',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'completed',
-      priority: 'medium',
-      description: 'Regular AC maintenance check',
-    },
-    {
-      id: '7',
-      type: 'Door Repair',
-      roomNumber: '209',
-      date: '09/04/25',
-      status: 'completed',
-      priority: 'low',
-      description: 'Door handle is loose and needs fixing',
-    },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const user = authService.getCurrentUser();
+        if (!user) return;
+        const res = await requestService.getTenantRequests(user.uid);
+        if (res.success) setRequests(res.requests);
+      } catch (e) {
+        console.log('Failed to load requests', e);
+      }
+    };
+    load();
+  }, []);
 
   const handleTabPress = (tabId) => {
     if (tabId === 'ongoing' || tabId === 'completed') {
@@ -110,7 +55,8 @@ const TenantRequests = ({ navigation }) => {
   };
 
 
-  const currentRequests = activeTab === 'ongoing' ? ongoingRequests : completedRequests;
+  const [expandedId, setExpandedId] = useState(null);
+  const currentRequests = requests.filter(r => (activeTab === 'ongoing' ? r.status !== 'completed' : r.status === 'completed'));
   const subtitle = activeTab === 'ongoing' 
     ? 'Submit your requests here' 
     : 'Requests that the landlord had completed.';
@@ -144,7 +90,8 @@ const TenantRequests = ({ navigation }) => {
             <RequestCard
               key={request.id}
               request={request}
-              onPress={() => console.log('Request pressed:', request.id)}
+              expanded={expandedId === request.id}
+              onPress={() => setExpandedId(expandedId === request.id ? null : request.id)}
             />
           ))}
         </View>

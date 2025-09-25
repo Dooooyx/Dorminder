@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import BotNav from '../components/BotNav';
@@ -19,8 +20,8 @@ import { cloudinaryService } from '../services/cloudinaryService';
 const NewRequestForm = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [priority, setPriority] = useState('medium');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [priority, setPriority] = useState('request');
   const [loading, setLoading] = useState(false);
 
   const handleTabPress = (tabId) => {
@@ -43,25 +44,75 @@ const NewRequestForm = ({ navigation }) => {
 
   const handleImagePicker = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Permission to access camera roll is required!');
-        return;
+      // Check existing permission first
+      let permission = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      }
+
+      if (!permission.granted) {
+        if (permission.canAskAgain) {
+          permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        }
+
+        if (!permission.granted) {
+          Alert.alert(
+            'Permission required',
+            'We need access to your photos to upload an image.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+          return;
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+        allowsEditing: false,
+        quality: 0.9,
+        allowsMultipleSelection: true,
+        selectionLimit: 5,
       });
 
-      if (!result.canceled) {
-        setSelectedImage(result.assets[0]);
+      if (!result.canceled && result.assets?.length) {
+        setSelectedImages(result.assets);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('ImagePicker error:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const handleChooseSource = () => {
+    Alert.alert(
+      'Add photo',
+      'Choose a source',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'From Gallery', onPress: handleImagePicker },
+        { text: 'Use Camera', onPress: handleOpenCamera },
+      ]
+    );
+  };
+
+  const handleOpenCamera = async () => {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission required', 'Camera access is needed to take a photo.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.9,
+      });
+      if (!result.canceled && result.assets?.length) {
+        setSelectedImages(prev => [...prev, ...result.assets]);
+      }
+    } catch (e) {
+      console.error('Camera error:', e);
+      Alert.alert('Error', 'Failed to take photo.');
     }
   };
 
@@ -77,20 +128,28 @@ const NewRequestForm = ({ navigation }) => {
 
     setLoading(true);
     try {
-      let imageUrl = null;
+      let imageUrls = [];
       
-      // Upload image if selected
-      if (selectedImage) {
-        const uploadResult = await cloudinaryService.uploadImage(selectedImage.uri);
-        imageUrl = uploadResult.secure_url;
+      // Upload images if selected
+      if (selectedImages.length) {
+        for (const asset of selectedImages) {
+          const uploadResult = await cloudinaryService.uploadFile(asset.uri);
+          if (uploadResult.success) {
+            imageUrls.push(uploadResult.downloadURL);
+          } else {
+            console.error('Image upload failed:', uploadResult.error);
+            Alert.alert('Upload Error', 'Failed to upload image. Please try again.');
+            return;
+          }
+        }
       }
 
       // Submit request
       const result = await requestService.submitRequest({
         title: title.trim(),
         description: description.trim(),
-        imageUrl: imageUrl,
-        priority: priority
+        images: imageUrls,
+        category: priority
       });
 
       if (result.success) {
@@ -171,29 +230,30 @@ const NewRequestForm = ({ navigation }) => {
           {/* Upload Image Section */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Upload Image (Optional)</Text>
-            <TouchableOpacity
-              style={styles.uploadArea}
-              onPress={handleImagePicker}
-              activeOpacity={0.7}
-            >
-              {selectedImage ? (
-                <Image source={{ uri: selectedImage.uri }} style={styles.selectedImage} />
-              ) : (
+            <View>
+              <TouchableOpacity style={styles.uploadArea} onPress={handleChooseSource} activeOpacity={0.7}>
                 <View style={styles.uploadPlaceholder}>
                   <View style={styles.uploadIcon}>
-                    <Text style={styles.uploadIconText}>↑</Text>
+                    <Text style={styles.uploadIconText}>＋</Text>
                   </View>
-                  <Text style={styles.uploadText}>Upload Image</Text>
+                  <Text style={styles.uploadText}>Add photos (Gallery or Camera)</Text>
+                </View>
+              </TouchableOpacity>
+              {selectedImages.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  {selectedImages.map((a, i) => (
+                    <Image key={i} source={{ uri: a.uri }} style={{ width: 90, height: 70, borderRadius: 6 }} />
+                  ))}
                 </View>
               )}
-            </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Priority Selector */}
+          {/* Category Selector */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Priority Level</Text>
+            <Text style={styles.inputLabel}>Type</Text>
             <View style={styles.priorityContainer}>
-              {['low', 'medium', 'high'].map((level) => (
+              {['request', 'report'].map((level) => (
                 <TouchableOpacity
                   key={level}
                   style={[
@@ -206,7 +266,7 @@ const NewRequestForm = ({ navigation }) => {
                     styles.priorityButtonText,
                     priority === level && styles.priorityButtonTextActive
                   ]}>
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                    {level === 'request' ? 'Request' : 'Report'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -223,7 +283,7 @@ const NewRequestForm = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Submit Request</Text>
+              <Text style={styles.submitButtonText}>Submit</Text>
             )}
           </TouchableOpacity>
         </View>

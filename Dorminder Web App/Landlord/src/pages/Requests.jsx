@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import OngoingRequests from '../components/OngoingRequests';
 import CompletedRequests from '../components/CompletedRequests';
 
 const Requests = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('ongoing');
+  const [category, setCategory] = useState('request');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cat = params.get('category');
+    if (cat === 'report' || cat === 'request') {
+      setCategory(cat);
+    }
+  }, [location.search]);
 
   const tabs = [
     { 
       id: 'ongoing', 
-      label: 'Pending Requests', 
+      label: category === 'report' ? 'Pending Report' : 'Pending Requests', 
       count: 0,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,7 +32,7 @@ const Requests = () => {
     },
     { 
       id: 'completed', 
-      label: 'Completed Requests', 
+      label: category === 'report' ? 'Completed Report' : 'Completed Requests', 
       count: 11,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,11 +45,11 @@ const Requests = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'ongoing':
-        return <OngoingRequests />;
+        return <OngoingRequests category={category} />;
       case 'completed':
-        return <CompletedRequests />;
+        return <CompletedRequests category={category} />;
       default:
-        return <OngoingRequests />;
+        return <OngoingRequests category={category} />;
     }
   };
 
@@ -91,7 +103,10 @@ const Requests = () => {
           
           {/* Request Cards Area */}
           <div className="flex-1 p-8 overflow-y-auto">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Requests</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold text-gray-800">{category === 'report' ? 'Reports' : 'Requests'}</h1>
+              <div />
+            </div>
             
             {/* Content based on active tab */}
             {renderContent()}

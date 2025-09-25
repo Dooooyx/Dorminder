@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { requestService } from '../services/requestService';
 import { useAuth } from '../context/AuthContext';
 
-const CompletedRequests = () => {
+const CompletedRequests = ({ category }) => {
   const [completedRequests, setCompletedRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const { user } = useAuth();
 
   // Load completed requests on component mount
@@ -23,13 +24,12 @@ const CompletedRequests = () => {
       }
       
       const propertyId = user.uid; // Use user's UID as propertyId
-      const result = await requestService.getRequestsByStatus(propertyId, 'completed');
+      const result = await requestService.getRequestsByStatus(propertyId, 'completed', category);
       
       if (result.success) {
         setCompletedRequests(result.data);
       } else {
         console.error('Error loading completed requests:', result.error);
-        // Fallback to empty array
         setCompletedRequests([]);
       }
     } catch (error) {
@@ -40,42 +40,7 @@ const CompletedRequests = () => {
     }
   };
 
-  // Fallback data for development
-  const fallbackData = [
-    {
-      id: 1,
-      title: "Aircon Maintenance",
-      requester: "Ari Jacob Necesario",
-      description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
-      date: "September 9, 2025",
-      completedDate: "September 10, 2025",
-      room: "Room 209",
-      status: "completed",
-      completedBy: "Maintenance Team"
-    },
-    {
-      id: 2,
-      title: "Aircon Maintenance",
-      requester: "Ari Jacob Necesario",
-      description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
-      date: "September 9, 2025",
-      completedDate: "September 10, 2025",
-      room: "Room 209",
-      status: "completed",
-      completedBy: "Maintenance Team"
-    },
-    {
-      id: 3,
-      title: "Aircon Maintenance",
-      requester: "Ari Jacob Necesario",
-      description: "Request for aircon maintenance. Dili na siya bugnaw,amet, consectetur adipiscing elit. Nullam magna erat, efficitur ac pulvinar non, dapibus vitae mauris. Integer aliquam erat eu nulla vulputate, in porttitor nulla hendrerit.",
-      date: "September 9, 2025",
-      completedDate: "September 10, 2025",
-      room: "Room 209",
-      status: "completed",
-      completedBy: "Maintenance Team"
-    }
-  ];
+  // No fallback data in production
 
   if (loading) {
     return (
@@ -85,7 +50,22 @@ const CompletedRequests = () => {
     );
   }
 
-  const requestsToShow = completedRequests.length > 0 ? completedRequests : fallbackData;
+  const requestsToShow = completedRequests;
+
+  const formatDateTime = (request) => {
+    const ts = request.createdAt;
+    if (ts && (ts.seconds || ts.toDate)) {
+      const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
+      const dateStr = d.toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      const timeStr = d.toLocaleTimeString(undefined, {
+        hour: 'numeric', minute: '2-digit'
+      });
+      return { date: dateStr, time: timeStr };
+    }
+    return { date: request.date || '', time: request.time || '' };
+  };
 
   return (
     <div className="space-y-3">
@@ -96,21 +76,61 @@ const CompletedRequests = () => {
         >
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-lg font-bold text-gray-900">{request.title}</h3>
-                <span className="text-sm font-medium text-gray-600">{request.room}</span>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-3xl font-bold text-gray-900 leading-tight">{request.title}</h3>
+                <span className="text-3xl font-bold text-gray-900 ml-4 whitespace-nowrap">{request.room}</span>
               </div>
               
-              <p className="text-sm text-gray-500 mb-2">{request.requester}</p>
+              <p className="text-[18px] text-gray-600 font-medium mb-3">{request.requester}</p>
               
-              <p className="text-gray-700 text-sm leading-relaxed mb-2">
+              <p className="text-gray-700 text-lg leading-relaxed mb-2">
                 {request.description}
               </p>
               
+              {/* Image holder */}
+              <div className="mb-3">
+                {/* Single imageUrl */}
+                {request.imageUrl && (
+                  <img
+                    src={request.imageUrl}
+                    alt="Request image"
+                    className="w-40 h-40 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setPreviewUrl(request.imageUrl)}
+                  />
+                )}
+
+                {/* Multiple images */}
+                {!request.imageUrl && request.images && request.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {request.images.map((imageUrl, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={`Request image ${index + 1}`}
+                          className="w-24 h-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setPreviewUrl(imageUrl)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Placeholder */}
+                {!request.imageUrl && (!request.images || request.images.length === 0) && (
+                  <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
+                    <span className="text-xs text-gray-400">No image</span>
+                  </div>
+                )}
+              </div>
+              
               <div className="flex flex-col space-y-1">
-                <span className="text-xs text-gray-400">Requested: {request.date}</span>
-                <span className="text-xs text-green-600 font-medium">
-                  Completed: {request.completedDate} by {request.completedBy}
+                <span className="text-sm text-gray-500">
+                  {(() => { const { date, time } = formatDateTime(request); return (
+                    <>Requested: {date}{date && time && ' | '}{time}</>
+                  ); })()}
+                </span>
+                <span className="text-sm text-green-600 font-medium">
+                  Completed: {request.completedDate} {request.completedBy ? `by ${request.completedBy}` : ''}
                 </span>
               </div>
             </div>
@@ -121,6 +141,15 @@ const CompletedRequests = () => {
       {completedRequests.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500">No completed requests at the moment.</p>
+        </div>
+      )}
+      {/* Image preview modal */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <img src={previewUrl} alt="Preview" className="max-w-full max-h-full rounded-lg shadow-2xl" />
         </div>
       )}
     </div>

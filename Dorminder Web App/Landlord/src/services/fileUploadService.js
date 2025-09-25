@@ -1,100 +1,59 @@
-// Cloudinary Upload Service for React.js
-export class FileUploadService {
-  constructor() {
-    this.cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dm3jdmi7t';
-    this.uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'dorminder-upload';
-    this.baseUrl = `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`;
-  }
+// Firebase Storage Upload Service for React.js
+import { uploadFile, uploadTenantValidId, uploadProfileImage, validateFile } from './firebaseStorage.js';
 
-  // Upload file to Cloudinary
+export class FileUploadService {
+  // Upload file to Firebase Storage
   async uploadFile(file, folder = 'dorminder') {
     try {
       // Validate file
-      const validation = this.validateFile(file);
+      const validation = validateFile(file);
       if (!validation.isValid) {
         return { success: false, error: validation.errors.join(', ') };
       }
 
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', this.uploadPreset);
-      formData.append('folder', folder);
-
-      // Upload to Cloudinary
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const timestamp = Date.now();
+      const extension = file.name.split('.').pop() || 'jpg';
+      const path = `${folder}/${timestamp}_${file.name}`;
+      
+      const downloadURL = await uploadFile(path, file);
       
       return {
         success: true,
-        downloadURL: result.secure_url, // Same property for compatibility
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        bytes: result.bytes
+        downloadURL: downloadURL,
+        path: path
       };
 
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
+      console.error('Firebase Storage upload error:', error);
       return { success: false, error: error.message };
     }
   }
 
   // Upload tenant valid ID image
   async uploadTenantValidId(file, tenantId) {
-    const folder = `dorminder/tenant-documents/${tenantId}`;
-    return await this.uploadFile(file, folder);
+    return await uploadTenantValidId(file, tenantId);
   }
 
   // Upload profile image
   async uploadProfileImage(file, userId) {
-    const folder = `dorminder/profile-images/${userId}`;
-    return await this.uploadFile(file, folder);
+    return await uploadProfileImage(file, userId);
   }
 
   // Validate file
   validateFile(file, allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'], maxSizeMB = 5) {
-    const errors = [];
-
-    if (!allowedTypes.includes(file.type)) {
-      errors.push(`File type not supported. Allowed types: ${allowedTypes.join(', ')}`);
-    }
-
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      errors.push(`File size too large. Maximum size: ${maxSizeMB}MB`);
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
+    return validateFile(file, allowedTypes, maxSizeMB);
   }
 
-  // Get optimized image URL
-  getOptimizedUrl(publicId, options = {}) {
-    const {
-      width = 'auto',
-      height = 'auto',
-      quality = 'auto',
-      format = 'auto'
-    } = options;
-
-    return `https://res.cloudinary.com/${this.cloudName}/image/upload/w_${width},h_${height},q_${quality},f_${format}/${publicId}`;
+  // Get optimized image URL (Firebase Storage URLs are already optimized)
+  getOptimizedUrl(downloadURL, options = {}) {
+    // Firebase Storage URLs are already optimized, return as-is
+    return downloadURL;
   }
 
-  // Get thumbnail URL
-  getThumbnailUrl(publicId, size = 150) {
-    return `https://res.cloudinary.com/${this.cloudName}/image/upload/w_${size},h_${size},c_fill,g_face/${publicId}`;
+  // Get thumbnail URL (same as optimized for Firebase Storage)
+  getThumbnailUrl(downloadURL, size = 150) {
+    // Firebase Storage URLs are already optimized, return as-is
+    return downloadURL;
   }
 }
 

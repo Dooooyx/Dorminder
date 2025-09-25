@@ -12,3 +12,5 @@ const SecurityPrivacy = () => {
 export default SecurityPrivacy;
 
 
+
+

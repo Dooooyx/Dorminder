@@ -1,36 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
-const RequestCard = ({ request, onPress }) => {
-  const getBorderColor = (priority, type) => {
-    switch (priority) {
-      case 'high':
-        return '#E53E3E'; // Orange/Red
-      case 'medium':
-        return '#3182CE'; // Blue
-      case 'low':
-        return '#38B2AC'; // Light Blue/Teal
-      default:
-        return '#3182CE';
-    }
+const RequestCard = ({ request, onPress, expanded = false }) => {
+  const getBorderColor = (category, status) => {
+    const cat = (category || '').toString().toLowerCase();
+    if (cat === 'report') return '#EE6C4D'; // orange for reports
+    if (status === 'completed') return '#2F855A'; // green
+    return '#3182CE'; // blue for requests/default
   };
 
-  const getTypeColor = (type) => {
-    switch (type.toLowerCase()) {
-      case 'room cleaning':
-        return '#2C5282'; // Dark Blue
-      case 'airconditioning cleaning':
-        return '#E53E3E'; // Orange/Red
-      case 'airconditioning maintenance':
-        return '#38B2AC'; // Light Blue/Teal
-      case 'door repair':
-        return '#38B2AC'; // Light Blue/Teal
-      default:
-        return '#3182CE';
-    }
-  };
+  const createdAt = request.createdAt?.toDate ? request.createdAt.toDate() : (request.createdAt?.seconds ? new Date(request.createdAt.seconds * 1000) : null);
+  const dateStr = createdAt
+    ? `${createdAt.toLocaleDateString()}  |  ${createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : (request.date || '');
 
-  const borderColor = getTypeColor(request.type);
+  const title = request.title || request.type || 'Request';
+  const roomInfo = request.roomNumber ? `ROOM # ${request.roomNumber}` : (request.tenantName ? request.tenantName : '');
+  const borderColor = getBorderColor(request.category, request.status);
 
   return (
     <TouchableOpacity
@@ -39,11 +25,23 @@ const RequestCard = ({ request, onPress }) => {
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-        <Text style={styles.requestType}>{request.type}</Text>
+        <Text style={styles.requestType}>{title}</Text>
         <Text style={styles.roomInfo}>
-          ROOM # {request.roomNumber} - {request.date}
+          {roomInfo}{roomInfo ? ' - ' : ''}{dateStr}
         </Text>
       </View>
+      {expanded && (
+        <View style={styles.detailsContainer}>
+          <View style={styles.detailsLeft}>
+            {!!request.description && (
+              <Text style={styles.detailsText}>{request.description}</Text>
+            )}
+          </View>
+          {!!request.imageUrl && (
+            <Image source={{ uri: request.imageUrl }} style={styles.detailsImage} resizeMode="cover" />
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -67,6 +65,30 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flex: 1,
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: '#E2E8F0',
+  },
+  detailsLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  detailsText: {
+    fontSize: 16,
+    color: '#1A202C',
+    lineHeight: 24,
+    textDecorationLine: 'none',
+  },
+  detailsImage: {
+    width: 120,
+    height: 100,
+    borderRadius: 6,
   },
   requestType: {
     fontSize: 16,

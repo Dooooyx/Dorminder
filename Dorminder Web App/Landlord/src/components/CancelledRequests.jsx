@@ -107,6 +107,24 @@ const CancelledRequests = () => {
                 {request.description}
               </p>
               
+              {/* Display request images if available */}
+              {request.images && request.images.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-2">
+                    {request.images.map((imageUrl, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={`Request image ${index + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => window.open(imageUrl, '_blank')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="flex flex-col space-y-1">
                 <span className="text-xs text-gray-400">Requested: {request.date}</span>
                 <span className="text-xs text-red-600 font-medium">

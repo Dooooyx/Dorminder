@@ -7,6 +7,9 @@
     "rules": "backend/firestore/rules/firestore.rules",
     "indexes": "backend/firestore/indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "public": "Dorminder/dist",
     "ignore": [
