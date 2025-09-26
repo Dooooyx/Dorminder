@@ -55,7 +55,6 @@ const TenantRequests = ({ navigation }) => {
   };
 
 
-  const [expandedId, setExpandedId] = useState(null);
   const currentRequests = requests.filter(r => (activeTab === 'ongoing' ? r.status !== 'completed' : r.status === 'completed'));
   const subtitle = activeTab === 'ongoing' 
     ? 'Submit your requests here' 
@@ -90,8 +89,6 @@ const TenantRequests = ({ navigation }) => {
             <RequestCard
               key={request.id}
               request={request}
-              expanded={expandedId === request.id}
-              onPress={() => setExpandedId(expandedId === request.id ? null : request.id)}
             />
           ))}
         </View>

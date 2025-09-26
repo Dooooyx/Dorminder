@@ -87,6 +87,8 @@ export class RequestService {
   // Get requests by status (optionally filter by category)
   async getRequestsByStatus(propertyId, status, category) {
     try {
+      console.log('🔍 getRequestsByStatus called with:', { propertyId, status, category });
+      
       const constraints = [
         where('propertyId', '==', propertyId),
         where('status', '==', status),
@@ -94,15 +96,20 @@ export class RequestService {
       ];
       if (category) {
         constraints.splice(2, 0, where('category', '==', category));
+        console.log('✅ Added category filter:', category);
       }
+      
       const q = query(collection(db, 'requests'), ...constraints);
       const querySnapshot = await getDocs(q);
       const requests = [];
       
       querySnapshot.forEach((doc) => {
-        requests.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        console.log('📄 Found request:', { id: doc.id, category: data.category, status: data.status });
+        requests.push({ id: doc.id, ...data });
       });
       
+      console.log(`📊 Total requests found: ${requests.length} for category: ${category}`);
       return { success: true, data: requests };
     } catch (error) {
       console.error('Error getting requests by status:', error);
