@@ -19,12 +19,12 @@ const Dashboard = () => {
       <SideNav />
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-50">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Top Bar */}
-        <TopNav title="Overview" />
+        <TopNav title="" />
         
-        {/* Main Content */}
-        <div className="p-8">
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-8">
           {/* Dashboard Header */}
           <DashboardHeader />
           

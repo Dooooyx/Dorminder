@@ -22,8 +22,8 @@ const ContactInfoScreen = ({ navigation }) => {
   const handleTabPress = (tabId) => {
     if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
-    } else if (tabId === 'announcement') {
-      navigation.navigate('AnnouncementsScreen');
+    } else if (tabId === 'news') {
+      navigation.navigate('NewsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {

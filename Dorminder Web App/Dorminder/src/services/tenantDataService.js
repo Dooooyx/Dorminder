@@ -247,29 +247,29 @@ export class TenantDataService {
     }
   }
   
-  // Get announcements for tenant's property
-  async getAnnouncements(propertyId) {
+  // Get news for tenant's property
+  async getNews(propertyId) {
     try {
-      const announcementsRef = collection(db, 'announcements');
+      const newsRef = collection(db, 'announcements'); // Keep collection name as 'announcements' for backend compatibility
       const q = query(
-        announcementsRef, 
+        newsRef, 
         where('propertyId', '==', propertyId),
         orderBy('createdAt', 'desc'),
         limit(5)
       );
       const querySnapshot = await getDocs(q);
       
-      const announcements = [];
+      const newsItems = [];
       querySnapshot.forEach((doc) => {
-        announcements.push({
+        newsItems.push({
           id: doc.id,
           ...doc.data()
         });
       });
       
-      return { success: true, data: announcements };
+      return { success: true, data: newsItems };
     } catch (error) {
-      console.error('Error getting announcements:', error);
+      console.error('Error getting news:', error);
       return { success: false, error: error.message };
     }
   }
@@ -298,9 +298,9 @@ export class TenantDataService {
       const rentResult = await this.getTenantRentStatus(tenant.id, tenant);
       const rentData = rentResult.success ? rentResult.data : null;
       
-      // Get announcements
-      const announcementsResult = await this.getAnnouncements(tenant.propertyId);
-      const announcements = announcementsResult.success ? announcementsResult.data : [];
+      // Get news
+      const newsResult = await this.getNews(tenant.propertyId);
+      const newsItems = newsResult.success ? newsResult.data : [];
       
       return {
         success: true,
@@ -308,7 +308,7 @@ export class TenantDataService {
           tenant,
           room: roomData,
           rent: rentData,
-          announcements
+          newsItems
         }
       };
     } catch (error) {

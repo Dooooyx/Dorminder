@@ -28,12 +28,12 @@ const Settings = () => {
       <SideNav />
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-50 flex flex-col">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Top Bar - spans across sub-nav and content */}
         <TopNav title="Settings" />
         
         {/* Sub-nav and Content Container */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex overflow-hidden">
           {/* Settings Sub-Navigation Sidebar */}
           <SettingsSubNav activeTab={activeTab} setActiveTab={setActiveTab} />
           

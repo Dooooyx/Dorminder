@@ -2,23 +2,23 @@ import React from 'react';
 import { useProfile } from '../context/ProfileContext';
 import icNotification from '../assets/icons/ic_notification.png';
 
-const TopNav = ({ title = "Dashboard" }) => {
+const TopNav = ({ title = "" }) => {
   const { profileImage, userName } = useProfile();
   return (
-    <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-7">
+    <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200 px-4 py-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center mx-4">
           {/* Notification Bell */}
           <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
             <img 
               src={icNotification} 
               alt="Notifications" 
-              className="w-6 h-6"
+              className="w-8 h-8"
             />
           </button>
           {/* User Profile */}
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
             {profileImage ? (
               <img 
                 src={profileImage} 

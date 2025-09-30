@@ -21,13 +21,13 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
         lastName: tenant.lastName || '',
         middleInitial: tenant.middleInitial || '',
         contactNumber: tenant.contactNumber || '',
-        emailAddress: tenant.emailAddress || '',
+        emailAddress: tenant.email || '',
         emergencyContact: tenant.emergencyContact || '',
         roomNumber: tenant.roomNumber || '',
         rentAmount: tenant.monthlyRent || 0,
         leaseStartDate: tenant.leaseStartDate || '',
         leaseEndDate: tenant.leaseEndDate || '',
-        loginEmail: tenant.emailAddress || '',
+        loginEmail: tenant.email || '',
         password: '••••••' // Hidden password display
       });
     }
@@ -60,13 +60,13 @@ const TenantDetailsModal = ({ isOpen, onClose, tenant, onEdit, onSave, onDownloa
         lastName: tenant.lastName || '',
         middleInitial: tenant.middleInitial || '',
         contactNumber: tenant.contactNumber || '',
-        emailAddress: tenant.emailAddress || '',
+        emailAddress: tenant.email || '',
         emergencyContact: tenant.emergencyContact || '',
         roomNumber: tenant.roomNumber || '',
         rentAmount: tenant.monthlyRent || 0,
         leaseStartDate: tenant.leaseStartDate || '',
         leaseEndDate: tenant.leaseEndDate || '',
-        loginEmail: tenant.emailAddress || '',
+        loginEmail: tenant.email || '',
         password: '••••••'
       });
     }

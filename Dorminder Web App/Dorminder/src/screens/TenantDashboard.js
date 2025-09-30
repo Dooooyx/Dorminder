@@ -16,6 +16,8 @@ import BurgerNav from '../components/BurgerNav';
 import TenantInfoHeader from '../components/TenantInfoHeader';
 import { authService } from '../services/auth';
 import { tenantDataService } from '../services/tenantDataService';
+import { billingService } from '../services/billingService';
+import BillBreakdownModal from '../components/BillBreakdownModal';
 
 const TenantDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -25,6 +27,11 @@ const TenantDashboard = ({ navigation }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Billing state
+  const [currentBalance, setCurrentBalance] = useState(0);
+  const [bills, setBills] = useState([]);
+  const [isBillBreakdownVisible, setIsBillBreakdownVisible] = useState(false);
   
   // Get current user
   const currentUser = authService.getCurrentUser();
@@ -43,12 +50,26 @@ const TenantDashboard = ({ navigation }) => {
         setLoading(true);
         setError('');
         
-        const result = await tenantDataService.getTenantDashboardData(currentUser.uid);
+        console.log('👤 Current user UID:', currentUser.uid);
         
-        if (result.success) {
-          setDashboardData(result.data);
+        // Fetch dashboard data and billing data in parallel
+        const [dashboardResult, billingResult] = await Promise.all([
+          tenantDataService.getTenantDashboardData(currentUser.uid),
+          billingService.getTenantCurrentBalance(currentUser.uid)
+        ]);
+        
+        if (dashboardResult.success) {
+          setDashboardData(dashboardResult.data);
         } else {
-          setError(result.error || 'Failed to load dashboard data');
+          setError(dashboardResult.error || 'Failed to load dashboard data');
+        }
+
+        if (billingResult.success) {
+          setCurrentBalance(billingResult.data.totalBalance);
+          setBills(billingResult.data.bills);
+        } else {
+          console.error('Error loading billing data:', billingResult.error);
+          // Don't set error for billing, just use default values
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -63,8 +84,8 @@ const TenantDashboard = ({ navigation }) => {
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'announcement') {
-      navigation.navigate('AnnouncementsScreen');
+    if (tabId === 'news') {
+      navigation.navigate('NewsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
@@ -93,7 +114,8 @@ const TenantDashboard = ({ navigation }) => {
 
   const handleViewMore = () => {
     console.log('View More pressed');
-    // Add your view more logic here
+    // Navigate to payment screen instead of showing modal
+    navigation.navigate('TenantPayment');
   };
 
   // BurgerNav handlers
@@ -165,14 +187,14 @@ const TenantDashboard = ({ navigation }) => {
       );
     }
 
-    const { tenant, room, rent, announcements } = dashboardData;
+    const { tenant, room, rent, newsItems } = dashboardData;
     
     // Debug logging
     console.log('Dashboard data received:', {
       tenant,
       room,
       rent,
-      announcements
+      newsItems
     });
     
     // Format room number
@@ -181,15 +203,16 @@ const TenantDashboard = ({ navigation }) => {
     // Format lease end date
     const leaseEndDate = tenantDataService.formatDate(tenant?.leaseEndDate);
     
-    // Get current balance (calculated based on months since room assignment)
-    const currentBalance = rent?.currentBalance || 0;
+    // Get current balance from bills (real-time data)
+    const balanceFromBills = currentBalance;
     const balanceDetails = rent?.balanceDetails;
     
     console.log('Balance info:', {
-      currentBalance,
+      balanceFromBills,
       balanceDetails,
       monthlyRent: tenant?.monthlyRent,
-      leaseStartDate: tenant?.leaseStartDate
+      leaseStartDate: tenant?.leaseStartDate,
+      billsCount: bills.length
     });
     
     // Format last payment
@@ -214,45 +237,45 @@ const TenantDashboard = ({ navigation }) => {
           roomInfoStyle={styles.tenantRoomInfo}
         />
 
-        {/* Rent Status Card using reusable InfoCard component */}
+        {/* Current Balance Card using reusable InfoCard component */}
         <InfoCard
-          title="Rent Status"
+          title="Current Balance"
           leftColumn={[
             {
-              label: "Current Balance",
-              date: "This Month",
-              value: currentBalance > 0 ? tenantDataService.formatCurrency(currentBalance) : "₱ 0"
+              label: "Outstanding Balance",
+              date: "From Bills",
+              value: balanceFromBills > 0 ? billingService.formatCurrency(balanceFromBills) : "₱ 0"
             }
           ]}
           rightColumn={[
             {
-              label: "Next Payment",
-              date: nextDueDate || "N/A",
-              value: tenantDataService.formatCurrency(nextPaymentAmount)
+              label: "Bills Count",
+              date: "Active Bills",
+              value: bills.length.toString()
             }
           ]}
-          ctaText="↗ View More"
+          ctaText="↗ Learn More"
           onCtaPress={handleViewMore}
         />
 
-        <Text style={styles.sectionTitle}>Announcements ↗</Text>
+        <Text style={styles.sectionTitle}>News ↗</Text>
 
-        {/* Dynamic Announcements */}
-        {announcements && announcements.length > 0 ? (
-          announcements.map((announcement, index) => (
+        {/* Dynamic News */}
+        {newsItems && newsItems.length > 0 ? (
+          newsItems.map((newsItem, index) => (
             <AnnouncementCard
-              key={announcement.id || index}
-              dateText={tenantDataService.formatDate(announcement.createdAt)}
-              statusLabel={announcement.status || 'Active'}
-              title={announcement.title || 'Announcement'}
-              subtitle={announcement.subtitle || ''}
-              body={announcement.body || announcement.content || ''}
-              footer={`Posted By: ${announcement.postedBy || 'Landlord'}`}
+              key={newsItem.id || index}
+              dateText={tenantDataService.formatDate(newsItem.createdAt)}
+              statusLabel={newsItem.status || 'Active'}
+              title={newsItem.title || 'News'}
+              subtitle={newsItem.subtitle || ''}
+              body={newsItem.body || newsItem.content || ''}
+              footer={`Posted By: ${newsItem.postedBy || 'Landlord'}`}
             />
           ))
         ) : (
           <View style={styles.noAnnouncementsContainer}>
-            <Text style={styles.noAnnouncementsText}>No announcements at this time</Text>
+            <Text style={styles.noAnnouncementsText}>No news at this time</Text>
           </View>
         )}
       </ScrollView>
@@ -307,6 +330,13 @@ const TenantDashboard = ({ navigation }) => {
         onChangePassword={handleChangePassword}
         onLogout={handleLogout}
         userName={userName}
+      />
+
+      {/* Bill Breakdown Modal */}
+      <BillBreakdownModal
+        visible={isBillBreakdownVisible}
+        onClose={() => setIsBillBreakdownVisible(false)}
+        tenantId={currentUser?.uid}
       />
     </SafeAreaView>
   );

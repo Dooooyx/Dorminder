@@ -23,7 +23,7 @@ const SideNav = () => {
     // Requests will be rendered with a dropdown below
     { path: '/requests', label: 'Requests', icon: icReport, hasChildren: true },
     { path: '/rules', label: 'Rules', icon: icTools },
-    { path: '/transactions', label: 'Transactions', icon: icTransactions },
+    { path: '/transactions', label: 'Billings', icon: icTransactions },
     { path: '/tools-reports', label: 'Tools & Reports', icon: icTools },
     { path: '/notifications', label: 'Notifications', icon: icNotifications },
   ];

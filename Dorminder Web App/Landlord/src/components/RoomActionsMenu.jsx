@@ -51,7 +51,7 @@ const RoomActionsMenu = ({ room, onView, onReassign, onRemove }) => {
 
       {/* Context Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-8 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]">
+        <div className="absolute right-0 top-8 z-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]">
           <button
             onClick={() => handleMenuClick('view')}
             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"

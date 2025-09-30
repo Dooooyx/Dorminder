@@ -41,8 +41,8 @@ const TenantRequests = ({ navigation }) => {
       setActiveTab(tabId);
     } else if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
-    } else if (tabId === 'announcement') {
-      navigation.navigate('AnnouncementsScreen');
+    } else if (tabId === 'news') {
+      navigation.navigate('NewsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'payment') {

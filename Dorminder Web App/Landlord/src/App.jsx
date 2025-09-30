@@ -11,7 +11,7 @@ import Rooms from './pages/Rooms';
 import Tenant from './pages/Tenant';
 import Requests from './pages/Requests';
 import Rules from './pages/Rules';
-import Transactions from './pages/Transactions';
+import Billings from './pages/Billings';
 import Settings from './pages/Settings';
 
 // Unauthorized page component
@@ -50,7 +50,7 @@ function App() {
             <Route path="/tenants" element={<ProtectedRoute><Tenant /></ProtectedRoute>} />
             <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
             <Route path="/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
-            <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+            <Route path="/transactions" element={<ProtectedRoute><Billings /></ProtectedRoute>} />
             <Route path="/tools-reports" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

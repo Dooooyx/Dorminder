@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import BotNav from '../components/BotNav';
 
-const AnnouncementsScreen = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState('announcement');
+const NewsScreen = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState('news');
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
@@ -25,7 +25,7 @@ const AnnouncementsScreen = ({ navigation }) => {
     }
   };
 
-  const announcements = [
+  const newsItems = [
     {
       id: 1,
       type: 'water',
@@ -72,20 +72,20 @@ const AnnouncementsScreen = ({ navigation }) => {
     },
   ];
 
-  const AnnouncementCard = ({ announcement }) => (
-    <View style={styles.announcementCard}>
-      <View style={[styles.colorBar, { backgroundColor: announcement.color }]} />
+  const NewsCard = ({ newsItem }) => (
+    <View style={styles.newsCard}>
+      <View style={[styles.colorBar, { backgroundColor: newsItem.color }]} />
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={styles.dateText}>{announcement.date}</Text>
-          <View style={[styles.statusTag, { backgroundColor: announcement.color }]}>
-            <Text style={styles.statusText}>{announcement.status}</Text>
+          <Text style={styles.dateText}>{newsItem.date}</Text>
+          <View style={[styles.statusTag, { backgroundColor: newsItem.color }]}>
+            <Text style={styles.statusText}>{newsItem.status}</Text>
           </View>
         </View>
-        <Text style={styles.title}>{announcement.title}</Text>
-        <Text style={styles.schedule}>{announcement.schedule}</Text>
-        <Text style={styles.description}>{announcement.description}</Text>
-        <Text style={styles.postedBy}>Posted By: {announcement.postedBy}</Text>
+        <Text style={styles.title}>{newsItem.title}</Text>
+        <Text style={styles.schedule}>{newsItem.schedule}</Text>
+        <Text style={styles.description}>{newsItem.description}</Text>
+        <Text style={styles.postedBy}>Posted By: {newsItem.postedBy}</Text>
       </View>
     </View>
   );
@@ -94,16 +94,16 @@ const AnnouncementsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.brandName}>Dorminder</Text>
-        <Text style={styles.title}>Announcements</Text>
+        <Text style={styles.title}>News</Text>
         <Text style={styles.subtitle}>
           View important updates, and official notices from the landlord in one place.
         </Text>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.announcementsList}>
-          {announcements.map((announcement) => (
-            <AnnouncementCard key={announcement.id} announcement={announcement} />
+        <View style={styles.newsList}>
+          {newsItems.map((newsItem) => (
+            <NewsCard key={newsItem.id} newsItem={newsItem} />
           ))}
         </View>
       </ScrollView>
@@ -147,10 +147,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  announcementsList: {
+  newsList: {
     paddingBottom: 20,
   },
-  announcementCard: {
+  newsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 16,
@@ -220,4 +220,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AnnouncementsScreen;
+export default NewsScreen;

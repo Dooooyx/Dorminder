@@ -105,25 +105,25 @@ export class FirestoreService {
     }
   }
 
-  // ===== ANNOUNCEMENTS =====
+  // ===== NEWS =====
 
-  // Get announcements for tenant's property
-  async getAnnouncements(propertyId) {
+  // Get news for tenant's property
+  async getNews(propertyId) {
     try {
       const q = query(
-        collection(db, 'announcements'),
+        collection(db, 'announcements'), // Keep collection name as 'announcements' for backend compatibility
         where('propertyId', '==', propertyId),
         orderBy('createdAt', 'desc'),
         limit(20)
       );
       const querySnapshot = await getDocs(q);
-      const announcements = [];
+      const newsItems = [];
       querySnapshot.forEach((doc) => {
-        announcements.push({ id: doc.id, ...doc.data() });
+        newsItems.push({ id: doc.id, ...doc.data() });
       });
-      return { success: true, data: announcements };
+      return { success: true, data: newsItems };
     } catch (error) {
-      console.error('Error getting announcements:', error);
+      console.error('Error getting news:', error);
       return { success: false, error: error.message };
     }
   }
@@ -164,21 +164,21 @@ export class FirestoreService {
     });
   }
 
-  // Listen to announcements in real-time
-  listenToAnnouncements(propertyId, callback) {
+  // Listen to news in real-time
+  listenToNews(propertyId, callback) {
     const q = query(
-      collection(db, 'announcements'),
+      collection(db, 'announcements'), // Keep collection name as 'announcements' for backend compatibility
       where('propertyId', '==', propertyId),
       orderBy('createdAt', 'desc'),
       limit(10)
     );
     
     return onSnapshot(q, (querySnapshot) => {
-      const announcements = [];
+      const newsItems = [];
       querySnapshot.forEach((doc) => {
-        announcements.push({ id: doc.id, ...doc.data() });
+        newsItems.push({ id: doc.id, ...doc.data() });
       });
-      callback(announcements);
+      callback(newsItems);
     });
   }
 

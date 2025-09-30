@@ -9,7 +9,7 @@ import PaymentIcon from '../assets/icons/ic_payment.png';
 const BotNav = ({ activeTab, onTabPress }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-    { id: 'announcement', label: 'Announcement', icon: NotificationIcon },
+    { id: 'news', label: 'News', icon: NotificationIcon },
     { id: 'rules', label: 'Rules', icon: RulesIcon },
     { id: 'request', label: 'Requests', icon: RequestIcon },
     { id: 'payment', label: 'Payment', icon: PaymentIcon },

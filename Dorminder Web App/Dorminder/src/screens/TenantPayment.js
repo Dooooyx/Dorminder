@@ -13,12 +13,23 @@ import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import { authService } from '../services/auth';
 import { tenantDataService } from '../services/tenantDataService';
+import { billingService } from '../services/billingService';
+import BillBreakdownModal from '../components/BillBreakdownModal';
+import ReceiptModal from '../components/ReceiptModal';
 
 const TenantPayment = ({ navigation }) => {
   const [activePaymentTab, setActivePaymentTab] = useState('bills');
   const [tenantData, setTenantData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Billing state
+  const [bills, setBills] = useState([]);
+  const [currentBalance, setCurrentBalance] = useState(0);
+  const [isBillBreakdownVisible, setIsBillBreakdownVisible] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
+  const [receiptText, setReceiptText] = useState('');
   
   // Get current user
   const currentUser = authService.getCurrentUser();
@@ -27,8 +38,8 @@ const TenantPayment = ({ navigation }) => {
   const handleTabPress = (tabId) => {
     if (tabId === 'dashboard') {
       navigation.navigate('TenantDashboard');
-    } else if (tabId === 'announcement') {
-      navigation.navigate('AnnouncementsScreen');
+    } else if (tabId === 'news') {
+      navigation.navigate('NewsScreen');
     } else if (tabId === 'rules') {
       navigation.navigate('TenantRules');
     } else if (tabId === 'request') {
@@ -51,9 +62,9 @@ const TenantPayment = ({ navigation }) => {
     console.log('Menu pressed');
   };
 
-  // Fetch tenant data
+  // Fetch tenant data and billing data
   useEffect(() => {
-    const fetchTenantData = async () => {
+    const fetchData = async () => {
       if (!currentUser) {
         setError('No user logged in');
         setLoading(false);
@@ -65,7 +76,12 @@ const TenantPayment = ({ navigation }) => {
         setError('');
         
         console.log('Getting tenant data for user:', currentUser.uid);
-        const tenantResult = await tenantDataService.getTenantData(currentUser.uid);
+        
+        // Fetch tenant data and billing data in parallel
+        const [tenantResult, billingResult] = await Promise.all([
+          tenantDataService.getTenantData(currentUser.uid),
+          billingService.getBillBreakdown(currentUser.uid)
+        ]);
         
         if (!tenantResult.success) {
           console.log('Tenant not found:', tenantResult.error);
@@ -78,65 +94,106 @@ const TenantPayment = ({ navigation }) => {
         console.log('Tenant data:', tenant);
         setTenantData(tenant);
         
+        if (billingResult.success) {
+          setBills(billingResult.data);
+          // Calculate current balance from pending/partially paid bills
+          const balance = billingResult.data
+            .filter(bill => bill.status === 'Pending' || bill.status === 'Partially Paid')
+            .reduce((total, bill) => total + (bill.remainingBalance || bill.totalAmount), 0);
+          setCurrentBalance(balance);
+        } else {
+          console.error('Error loading billing data:', billingResult.error);
+        }
+        
       } catch (error) {
-        console.error('Error fetching tenant data:', error);
+        console.error('Error fetching data:', error);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTenantData();
+    fetchData();
   }, [currentUser]);
 
-  // Mock data for bills
-  const billsData = [
-    { month: 'Sept 2025', amount: 'PHP 1,565.56', status: 'pending' },
-    { month: 'Aug 2025', amount: 'PHP 1,565.56', status: 'paid' },
-    { month: 'July 2025', amount: 'PHP 1,565.56', status: 'paid' },
-    { month: 'June 2025', amount: 'PHP 1,565.56', status: 'pending' },
-    { month: 'May 2025', amount: 'PHP 1,565.56', status: 'pending' },
-  ];
+  // Handle PDF download
+  const handleDownloadPDF = async (bill) => {
+    if (generatingPDF) return; // Prevent multiple simultaneous generations
+    
+    try {
+      setGeneratingPDF(true);
+      
+      // Import simple receipt generator
+      const { generateSimpleReceipt } = await import('../utils/simplePDFGenerator');
+      
+      // Generate receipt text
+      const receipt = await generateSimpleReceipt(bill, tenantData);
+      
+      // Show receipt in modal
+      setReceiptText(receipt);
+      setIsReceiptModalVisible(true);
+      
+      console.log('Receipt generated successfully');
+    } catch (error) {
+      console.error('Error generating receipt:', error);
+      
+      // Fallback: Show basic bill details in alert
+      const billDetails = `
+Bill Receipt - ${bill.billingPeriod}
 
-  // Mock data for payments
-  const paymentsData = [
-    { amount: 'PHP 1,565.56', date: 'Sat, 08/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 07/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 06/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 05/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 04/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 03/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 02/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 01/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 12/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 11/30, 7:30 AM', status: 'completed' },
-    { amount: 'PHP 1,565.56', date: 'Sat, 10/30, 7:30 AM', status: 'completed' },
-  ];
+Amount: ${billingService.formatCurrency(bill.totalAmount)}
+Status: ${bill.status}
+Due Date: ${bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : 'N/A'}
+Room: ${bill.roomNumber}
+
+${bill.status === 'Partially Paid' && bill.remainingBalance 
+  ? `Remaining Balance: ${billingService.formatCurrency(bill.remainingBalance)}`
+  : ''
+}
+
+This is your bill receipt. You can take a screenshot for your records.
+      `;
+      
+      alert(billDetails);
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
 
   const BillCard = ({ bill }) => (
-    <View style={styles.billCard}>
+    <TouchableOpacity 
+      style={[styles.billCard, generatingPDF && styles.billCardDisabled]}
+      onPress={() => handleDownloadPDF(bill)}
+      disabled={generatingPDF}
+    >
       <View style={styles.billContent}>
         <View style={styles.billLeft}>
-          <Text style={styles.billMonth}>{bill.month}</Text>
-          <Text style={styles.billAmount}>{bill.amount}</Text>
+          <Text style={styles.billMonth}>{bill.billingPeriod}</Text>
+          <Text style={styles.billAmount}>{billingService.formatCurrency(bill.totalAmount)}</Text>
+          <Text style={styles.billStatus}>{bill.status}</Text>
         </View>
         <View style={styles.billRight}>
           <View style={[
             styles.downloadIcon,
-            bill.status === 'paid' ? styles.downloadIconPaid : styles.downloadIconPending
+            bill.status === 'Paid' ? styles.downloadIconPaid : styles.downloadIconPending,
+            generatingPDF && styles.downloadIconDisabled
           ]}>
-            <Image 
-              source={require('../assets/icons/ic_download.png')}
-              style={[
-                styles.downloadIconImage,
-                bill.status === 'paid' ? styles.downloadIconImagePaid : styles.downloadIconImagePending
-              ]}
-              resizeMode="contain"
-            />
+            {generatingPDF ? (
+              <Text style={styles.loadingText}>...</Text>
+            ) : (
+              <Image 
+                source={require('../assets/icons/ic_download.png')}
+                style={[
+                  styles.downloadIconImage,
+                  bill.status === 'Paid' ? styles.downloadIconImagePaid : styles.downloadIconImagePending
+                ]}
+                resizeMode="contain"
+              />
+            )}
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const PaymentItem = ({ payment }) => (
@@ -187,11 +244,11 @@ const TenantPayment = ({ navigation }) => {
         </View>
         <View style={styles.summaryBottom}>
           <View style={styles.summaryBottomLeft}>
-            <Text style={styles.rentDueText}>Rent Due:</Text>
-            <Text style={styles.rentAmount}>2,711.51</Text>
+            <Text style={styles.rentDueText}>Current Balance:</Text>
+            <Text style={styles.rentAmount}>{billingService.formatCurrency(currentBalance)}</Text>
           </View>
           <View style={styles.summaryBottomRight}>
-            <Text style={styles.dueDate}>10/30/2025</Text>
+            <Text style={styles.dueDate}>{bills.length} bills</Text>
           </View>
         </View>
       </View>
@@ -238,24 +295,61 @@ const TenantPayment = ({ navigation }) => {
         {activePaymentTab === 'bills' ? (
           <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
             <View style={styles.billsContainer}>
-              {billsData.map((bill, index) => (
-                <BillCard key={index} bill={bill} />
-              ))}
+              {bills.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No bills found</Text>
+                  <Text style={styles.emptySubtext}>Your bills will appear here once generated by your landlord</Text>
+                </View>
+              ) : (
+                bills.map((bill, index) => (
+                  <BillCard key={bill.id || index} bill={bill} />
+                ))
+              )}
             </View>
           </ScrollView>
         ) : (
           <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
             <View style={styles.paymentsContainer}>
-              <Text style={styles.yearText}>2025</Text>
-              {paymentsData.map((payment, index) => (
-                <PaymentItem key={index} payment={payment} />
-              ))}
+              <Text style={styles.yearText}>Payment History</Text>
+              {bills.filter(bill => bill.status === 'Paid').length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No payment history</Text>
+                  <Text style={styles.emptySubtext}>Your payment history will appear here</Text>
+                </View>
+              ) : (
+                bills
+                  .filter(bill => bill.status === 'Paid')
+                  .map((bill, index) => (
+                    <PaymentItem 
+                      key={bill.id || index} 
+                      payment={{
+                        amount: billingService.formatCurrency(bill.totalAmount),
+                        date: billingService.formatDate(bill.paymentDate || bill.createdAt),
+                        status: 'completed'
+                      }} 
+                    />
+                  ))
+              )}
             </View>
           </ScrollView>
         )}
       </View>
 
       <BotNav activeTab="payment" onTabPress={handleTabPress} />
+
+      {/* Bill Breakdown Modal */}
+      <BillBreakdownModal
+        visible={isBillBreakdownVisible}
+        onClose={() => setIsBillBreakdownVisible(false)}
+        tenantId={currentUser?.uid}
+      />
+
+      {/* Receipt Modal */}
+      <ReceiptModal
+        visible={isReceiptModalVisible}
+        onClose={() => setIsReceiptModalVisible(false)}
+        receiptText={receiptText}
+      />
     </SafeAreaView>
   );
 };
@@ -498,6 +592,39 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#10b981',
+  },
+  billStatus: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  billCardDisabled: {
+    opacity: 0.6,
+  },
+  downloadIconDisabled: {
+    backgroundColor: '#e5e7eb',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6b7280',
   },
 });
 

@@ -59,12 +59,12 @@ const Requests = () => {
       <SideNav />
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-50 flex flex-col">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Top Bar - spans across sub-nav and request cards */}
         <TopNav title="Requests" />
         
         {/* Sub-nav and Content Container */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex overflow-hidden">
           {/* Request Sub-Navigation Sidebar */}
           <div className="w-56 bg-white shadow-sm flex flex-col">
             {/* Navigation items */}

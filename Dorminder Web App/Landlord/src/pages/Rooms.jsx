@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import AddRoomModal from '../components/AddRoomModal';
+import RoomDetailsModal from '../components/RoomDetailsModal';
 import RoomActionsMenu from '../components/RoomActionsMenu';
 import SortModal from '../components/SortModal';
 import { roomService } from '../services/roomService';
@@ -13,6 +14,8 @@ const Rooms = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
+  const [isRoomDetailsModalOpen, setIsRoomDetailsModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const [sortOptions, setSortOptions] = useState({
     roomNumber: 'Ascending',
@@ -46,6 +49,7 @@ const Rooms = () => {
 
       // Get rooms for the property
       const roomsResult = await roomService.getRoomsByProperty(user.uid);
+      console.log('Raw rooms data from database:', roomsResult);
       
       if (roomsResult.success) {
         // Get tenants to populate tenant information
@@ -58,11 +62,11 @@ const Rooms = () => {
           // Determine status based on whether tenant is assigned
           const status = tenant ? 'Occupied' : 'Vacant';
           return {
-            id: room.id,
-            roomNumber: room.roomNumber,
+            // Include all room data for the details modal
+            ...room,
+            // Override/add tenant-specific data for the table display
             tenant: tenant ? `${tenant.firstName} ${tenant.lastName}` : '',
             leaseDates: tenant ? `${new Date(tenant.leaseStartDate).toLocaleDateString()} - ${new Date(tenant.leaseEndDate).toLocaleDateString()}` : '',
-            monthlyRent: room.monthlyRent || 0,
             status: status,
             tenantId: tenant ? tenant.id : null
           };
@@ -89,16 +93,16 @@ const Rooms = () => {
   }, [authLoading, user, loadRooms]);
 
   const getStatusBadge = (status) => {
-    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses = "inline-flex items-center justify-center px-3 py-1 text-xs font-medium min-w-[70px] h-6";
     switch (status) {
       case 'Occupied':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} text-white`;
       case 'Vacant':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} text-white`;
       case 'Maintenance':
-        return `${baseClasses} bg-orange-100 text-orange-800`;
+        return `${baseClasses} text-white`;
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} text-white`;
     }
   };
 
@@ -215,19 +219,50 @@ const Rooms = () => {
     }
   };
 
-  const handleDeleteRooms = () => {
-    if (selectedRooms.length > 0) {
-      setRooms(prev => prev.filter(room => !selectedRooms.includes(room.id)));
-      setSelectedRooms([]);
-      console.log('Rooms deleted:', selectedRooms);
+  const handleViewRoom = (room) => {
+    console.log('Room data being passed to modal:', room);
+    setSelectedRoom(room);
+    setIsRoomDetailsModalOpen(true);
+  };
+
+  const handleEditRoom = async (updatedRoom) => {
+    try {
+      // Update the room in the local state
+      setRooms(prev => prev.map(room => 
+        room.id === updatedRoom.id ? { ...room, ...updatedRoom } : room
+      ));
+      console.log('Room updated successfully:', updatedRoom);
+    } catch (error) {
+      console.error('Error updating room in local state:', error);
     }
   };
 
-  const handleViewRoom = (room) => {
-    console.log('View room:', room);
-    // TODO: Implement view room functionality
-    alert(`Viewing room: ${room.roomNumber}`);
+  const handleDeleteRooms = async () => {
+    if (selectedRooms.length > 0) {
+      try {
+        // Delete rooms from database
+        const deletePromises = selectedRooms.map(roomId => 
+          roomService.deleteRoom(roomId)
+        );
+        
+        const results = await Promise.all(deletePromises);
+        const failedDeletes = results.filter(result => !result.success);
+        
+        if (failedDeletes.length === 0) {
+          // Update local state only after successful deletion
+          setRooms(prev => prev.filter(room => !selectedRooms.includes(room.id)));
+          setSelectedRooms([]);
+          alert(`Successfully deleted ${selectedRooms.length} room(s)`);
+        } else {
+          alert(`Failed to delete ${failedDeletes.length} room(s)`);
+        }
+      } catch (error) {
+        console.error('Error deleting rooms:', error);
+        alert('Error deleting rooms. Please try again.');
+      }
+    }
   };
+
 
   const handleReassignRoom = (room) => {
     console.log('Reassign room:', room);
@@ -235,10 +270,23 @@ const Rooms = () => {
     alert(`Reassigning room: ${room.roomNumber}`);
   };
 
-  const handleRemoveRoom = (room) => {
+  const handleRemoveRoom = async (room) => {
     console.log('Remove room:', room);
     if (window.confirm(`Are you sure you want to remove ${room.roomNumber}?`)) {
-      setRooms(prev => prev.filter(r => r.id !== room.id));
+      try {
+        const result = await roomService.deleteRoom(room.id);
+        
+        if (result.success) {
+          // Update local state only after successful deletion
+          setRooms(prev => prev.filter(r => r.id !== room.id));
+          alert(`Successfully deleted room ${room.roomNumber}`);
+        } else {
+          alert(`Failed to delete room: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Error deleting room. Please try again.');
+      }
     }
   };
 
@@ -269,12 +317,12 @@ const Rooms = () => {
       <SideNav />
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-50">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Top Bar */}
         <TopNav title="Room Management" />
 
-        {/* Main Content */}
-        <div className="p-6">
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Page Header */}
           <div className="mb-6">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Rooms</h2>
@@ -368,10 +416,10 @@ const Rooms = () => {
 
           {/* Rooms Table */}
           {!loading && !error && (
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-[600px]">
+              <div className="overflow-x-auto flex-1">
                 <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-white">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <input
@@ -425,7 +473,15 @@ const Rooms = () => {
                         ₱{room.monthlyRent.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(room.status)}>
+                        <span 
+                          className={getStatusBadge(room.status)} 
+                          style={{ 
+                            borderRadius: '5px',
+                            backgroundColor: room.status === 'Occupied' ? '#61BD45' : 
+                                           room.status === 'Vacant' ? '#9498A0' : 
+                                           room.status === 'Maintenance' ? '#EE6C4D' : '#9498A0'
+                          }}
+                        >
                           {room.status}
                         </span>
                       </td>
@@ -448,10 +504,10 @@ const Rooms = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
 
-            {/* Pagination */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              {/* Pagination */}
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 flex-shrink-0">
               <div className="flex-1 flex justify-between sm:hidden">
                 <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                   Previous
@@ -498,6 +554,14 @@ const Rooms = () => {
         isOpen={isAddRoomModalOpen}
         onClose={() => setIsAddRoomModalOpen(false)}
         onAddRoom={handleAddRoom}
+      />
+
+      {/* Room Details Modal */}
+      <RoomDetailsModal
+        isOpen={isRoomDetailsModalOpen}
+        onClose={() => setIsRoomDetailsModalOpen(false)}
+        room={selectedRoom}
+        onEdit={handleEditRoom}
       />
 
       {/* Sort Modal */}

@@ -1,6 +1,6 @@
 // src/screens/RegisterScreen.js
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, Modal, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Image, Modal, TextInput, ActivityIndicator } from "react-native";
 import InputField from "../components/InputField";
 import CustomButton from "../components/CustomButton";
 import TermsConsent from "../components/TermsConsent";
@@ -16,6 +16,7 @@ export default function RegisterScreen({ navigation }) {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("+63 ");
+  const [loading, setLoading] = useState(false);
 
   // Password strength validation
   const validatePassword = (pwd) => {
@@ -105,7 +106,9 @@ export default function RegisterScreen({ navigation }) {
     Alert.alert("Password Error", message);
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+    if (loading) return; // Prevent double-clicking
+
     // Validate password
     const passwordErrors = validatePassword(password);
     if (passwordErrors.length > 0) {
@@ -123,7 +126,18 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert("Error", "Please agree to the Terms & Privacy Policy");
       return;
     }
-    Alert.alert("Register", "Landlord registration functionality would go here!");
+
+    setLoading(true);
+    try {
+      // Simulate registration process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      Alert.alert("Register", "Landlord registration functionality would go here!");
+    } catch (error) {
+      console.error("Registration error:", error);
+      Alert.alert("Error", "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const passwordErrors = validatePassword(password);
@@ -277,11 +291,18 @@ export default function RegisterScreen({ navigation }) {
 
         {/* Register Button */}
         <CustomButton 
-          title="REGISTER" 
+          title={loading ? "REGISTERING..." : "REGISTER"} 
           onPress={handleRegister} 
           bgColor="#e85a4f"
           style={styles.registerButton}
+          disabled={loading}
         />
+
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#e85a4f" />
+          </View>
+        )}
 
         {/* Login Link */}
         <View style={styles.loginLinkContainer}>
@@ -484,6 +505,10 @@ const styles = StyleSheet.create({
   registerButton: {
     width: '100%',
     marginBottom: 24,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginTop: 10,
   },
   loginLinkContainer: {
     flexDirection: 'row',

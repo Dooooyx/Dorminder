@@ -72,18 +72,34 @@ const Tenant = () => {
   }, [authLoading, user, loadTenants]);
 
   const getStatusBadge = (status) => {
-    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses = "inline-flex items-center justify-center px-3 py-1 text-xs font-medium min-w-[70px] h-6";
     switch (status) {
       case 'Active':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} text-white`;
       case 'Inactive':
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} text-white`;
       case 'Overdue':
-        return `${baseClasses} bg-red-100 text-red-800`;
+        return `${baseClasses} text-white`;
       case 'Pending':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
+        return `${baseClasses} text-white`;
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} text-white`;
+    }
+  };
+
+  const getPaymentStatusBadge = (paymentStatus) => {
+    const baseClasses = "inline-flex items-center justify-center px-3 py-1 text-xs font-medium min-w-[70px] h-6";
+    switch (paymentStatus) {
+      case 'Paid':
+        return `${baseClasses} text-white`;
+      case 'Unpaid':
+        return `${baseClasses} text-white`;
+      case 'Pending':
+        return `${baseClasses} text-white`;
+      case 'Overdue':
+        return `${baseClasses} text-white`;
+      default:
+        return `${baseClasses} text-white`;
     }
   };
 
@@ -275,12 +291,12 @@ const Tenant = () => {
       <SideNav />
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-50">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Top Bar */}
-        <TopNav title="Tenant Management" />
+        <TopNav title="" />
 
-        {/* Main Content */}
-        <div className="p-6">
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Page Header */}
           <div className="mb-6">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Tenants</h2>
@@ -365,10 +381,10 @@ const Tenant = () => {
 
           {/* Tenants Table */}
           {!loading && !error && (
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-[600px]">
+              <div className="overflow-x-auto flex-1">
                 <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-white">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <input
@@ -395,6 +411,9 @@ const Tenant = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -434,8 +453,29 @@ const Tenant = () => {
                         ₱{tenant.monthlyRent.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(tenant.status)}>
+                        <span 
+                          className={getStatusBadge(tenant.status)} 
+                          style={{ 
+                            borderRadius: '5px',
+                            backgroundColor: tenant.status === 'Active' ? '#61BD45' : 
+                                           tenant.status === 'Inactive' ? '#EE6C4D' : 
+                                           tenant.status === 'Overdue' ? '#EE6C4D' : '#9498A0'
+                          }}
+                        >
                           {tenant.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span 
+                          className={getPaymentStatusBadge(tenant.paymentStatus || 'Pending')} 
+                          style={{ 
+                            borderRadius: '5px',
+                            backgroundColor: (tenant.paymentStatus || 'Pending') === 'Paid' ? '#61BD45' : 
+                                           (tenant.paymentStatus || 'Pending') === 'Unpaid' ? '#EE6C4D' : 
+                                           (tenant.paymentStatus || 'Pending') === 'Overdue' ? '#EE6C4D' : '#9498A0'
+                          }}
+                        >
+                          {tenant.paymentStatus || 'Pending'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-lg font-medium">
@@ -460,10 +500,10 @@ const Tenant = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
 
-            {/* Pagination */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              {/* Pagination */}
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 flex-shrink-0">
               <div className="flex-1 flex justify-between sm:hidden">
                 <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                   Previous

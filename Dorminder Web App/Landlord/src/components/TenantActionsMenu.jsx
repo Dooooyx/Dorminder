@@ -34,7 +34,7 @@ const TenantActionsMenu = ({ tenant, onView, onEdit, onRemove }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-1 border border-gray-200">
           <div className="py-1">
             <button
               onClick={() => handleAction(onView)}
