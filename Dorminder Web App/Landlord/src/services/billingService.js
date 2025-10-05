@@ -105,6 +105,14 @@ export class BillingService {
   async updateBillStatus(billId, status, paymentAmount = null, paymentDate = null) {
     try {
       const billRef = doc(db, 'bills', billId);
+      
+      // Get the current bill data to access tenantId
+      const billDoc = await getDoc(billRef);
+      if (!billDoc.exists()) {
+        return { success: false, error: 'Bill not found' };
+      }
+      
+      const billData = billDoc.data();
       const updateData = {
         status,
         updatedAt: serverTimestamp()
@@ -113,10 +121,22 @@ export class BillingService {
       if (paymentAmount !== null) {
         updateData.paymentAmount = paymentAmount;
         updateData.paymentDate = paymentDate || serverTimestamp();
-        updateData.remainingBalance = Math.max(0, updateData.totalAmount - paymentAmount);
+        updateData.remainingBalance = Math.max(0, (billData.totalAmount || 0) - paymentAmount);
       }
 
       await updateDoc(billRef, updateData);
+      
+      // Update tenant payment status if bill is paid
+      if (status === 'Paid' && billData.tenantId) {
+        try {
+          const { tenantService } = await import('./tenantService');
+          await tenantService.updateTenantPaymentStatus(billData.tenantId, 'Paid');
+          console.log(`✅ Updated tenant ${billData.tenantId} payment status to Paid`);
+        } catch (tenantError) {
+          console.error('Error updating tenant payment status:', tenantError);
+          // Don't fail the bill update if tenant update fails
+        }
+      }
       
       return { success: true };
     } catch (error) {

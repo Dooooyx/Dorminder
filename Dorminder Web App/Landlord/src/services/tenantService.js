@@ -422,6 +422,23 @@ export class TenantService {
       return { success: false, error: error.message };
     }
   }
+
+  // Update tenant payment status
+  async updateTenantPaymentStatus(tenantId, paymentStatus) {
+    try {
+      const tenantRef = doc(db, 'tenants', tenantId);
+      await updateDoc(tenantRef, {
+        paymentStatus: paymentStatus,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log(`✅ Updated tenant ${tenantId} payment status to: ${paymentStatus}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating tenant payment status:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 export const tenantService = new TenantService();

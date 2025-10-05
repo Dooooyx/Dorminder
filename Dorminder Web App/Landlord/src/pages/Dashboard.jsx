@@ -1,18 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import DashboardHeader from '../components/DashboardHeader';
 import StatsGrid from '../components/StatsGrid';
 import RecentActivity from '../components/RecentActivity';
-import { useProfile } from '../context/ProfileContext';
+import AIAnalyticsDashboard from '../components/AIAnalyticsDashboard';
 
 const Dashboard = () => {
-  const { forceRefresh } = useProfile();
-
-  // Refresh user data when Dashboard loads
-  useEffect(() => {
-    forceRefresh();
-  }, []); // Remove forceRefresh from dependencies to prevent infinite loop
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Sidebar Navigation */}
@@ -30,6 +24,11 @@ const Dashboard = () => {
           
           {/* Stats Grid */}
           <StatsGrid />
+          
+          {/* AI Analytics Dashboard */}
+          <div className="mb-8">
+            <AIAnalyticsDashboard />
+          </div>
           
           {/* Recent Activity */}
           <RecentActivity />

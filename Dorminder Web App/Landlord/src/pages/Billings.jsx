@@ -4,6 +4,9 @@ import TopNav from '../components/TopNav';
 import GenerateBillModal from '../components/GenerateBillModal';
 import PaymentProcessingModal from '../components/PaymentProcessingModal';
 import MonthlyRentResetModal from '../components/MonthlyRentResetModal';
+import BillingActionMenu from '../components/BillingActionMenu';
+import BillingFilterDropdown from '../components/BillingFilterDropdown';
+import BillingSortDropdown from '../components/BillingSortDropdown';
 import { useAuth } from '../context/AuthContext';
 import { billingService } from '../services/billingService';
 import icSort from '../assets/icons/ic_sort.png';
@@ -19,6 +22,16 @@ const Billings = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isMonthlyRentResetModalOpen, setIsMonthlyRentResetModalOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [sortOptions, setSortOptions] = useState({
+    date: 'descending',
+    amount: 'descending',
+    tenant: 'a-z',
+    room: 'a-z',
+    status: 'a-z'
+  });
   const { user } = useAuth();
 
   // Sample billing data - in real app, this would come from Firebase/Firestore
@@ -160,11 +173,67 @@ const Billings = () => {
     }
   };
 
-  // Filter billings based on search term
-  const filteredBillings = bills.filter(bill =>
-    (bill.tenantName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (bill.roomNumber || '').toString().includes(searchTerm.toLowerCase())
-  );
+  // Filter and sort bills
+  const filteredBillings = bills.filter(bill => {
+    // Search filter
+    const matchesSearch = !searchTerm || 
+      bill.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bill.roomNumber?.toString().includes(searchTerm) ||
+      bill.billingPeriod?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Additional filters
+    const matchesStatus = !filters.status || bill.status === filters.status;
+    const matchesActivityType = !filters.activityType || bill.activityType === filters.activityType;
+    const matchesKeywordSearch = !filters.keywordSearch || 
+      bill.tenantName?.toLowerCase().includes(filters.keywordSearch.toLowerCase()) ||
+      bill.roomNumber?.toString().includes(filters.keywordSearch) ||
+      bill.billingPeriod?.toLowerCase().includes(filters.keywordSearch.toLowerCase());
+    
+    // Date range filter
+    const billDate = bill.dueDate ? new Date(bill.dueDate.seconds ? bill.dueDate.seconds * 1000 : bill.dueDate) : new Date();
+    const matchesDateRange = (!filters.dateRange?.from || billDate >= new Date(filters.dateRange.from)) &&
+                            (!filters.dateRange?.to || billDate <= new Date(filters.dateRange.to));
+
+    return matchesSearch && matchesStatus && matchesActivityType && matchesKeywordSearch && matchesDateRange;
+  }).sort((a, b) => {
+    // Apply sorting
+    let comparison = 0;
+    
+    // Date sorting
+    if (sortOptions.date) {
+      const dateA = a.dueDate ? new Date(a.dueDate.seconds ? a.dueDate.seconds * 1000 : a.dueDate) : new Date(0);
+      const dateB = b.dueDate ? new Date(b.dueDate.seconds ? b.dueDate.seconds * 1000 : b.dueDate) : new Date(0);
+      comparison = sortOptions.date === 'ascending' ? dateA - dateB : dateB - dateA;
+    }
+    
+    // Amount sorting
+    if (sortOptions.amount && comparison === 0) {
+      comparison = sortOptions.amount === 'ascending' ? a.totalAmount - b.totalAmount : b.totalAmount - a.totalAmount;
+    }
+    
+    // Tenant name sorting
+    if (sortOptions.tenant && comparison === 0) {
+      const nameA = a.tenantName || '';
+      const nameB = b.tenantName || '';
+      comparison = sortOptions.tenant === 'a-z' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    }
+    
+    // Room number sorting
+    if (sortOptions.room && comparison === 0) {
+      const roomA = a.roomNumber || '';
+      const roomB = b.roomNumber || '';
+      comparison = sortOptions.room === 'a-z' ? roomA.toString().localeCompare(roomB.toString()) : roomB.toString().localeCompare(roomA.toString());
+    }
+    
+    // Status sorting
+    if (sortOptions.status && comparison === 0) {
+      const statusA = a.status || '';
+      const statusB = b.status || '';
+      comparison = sortOptions.status === 'a-z' ? statusA.localeCompare(statusB) : statusB.localeCompare(statusA);
+    }
+    
+    return comparison;
+  });
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredBillings.length / itemsPerPage);
@@ -191,6 +260,19 @@ const Billings = () => {
   const handleProcessPayment = (bill) => {
     setSelectedBill(bill);
     setIsPaymentModalOpen(true);
+  };
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleApplySort = (newSortOptions) => {
+    setSortOptions(newSortOptions);
+  };
+
+  const handleBillUpdate = () => {
+    loadBills(); // Reload bills when status is updated
   };
 
   const handlePaymentProcessed = (updatedBill) => {
@@ -269,12 +351,42 @@ const Billings = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                  <button className="p-1 hover:bg-gray-100 rounded">
-                    <img src={icFilter} alt="Filter" className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 rounded">
-                    <img src={icSort} alt="Sort" className="w-4 h-4" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setIsFilterDropdownOpen(!isFilterDropdownOpen);
+                        setIsSortDropdownOpen(false); // Close sort when opening filter
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Filter bills"
+                    >
+                      <img src={icFilter} alt="Filter" className="w-4 h-4" />
+                    </button>
+                    <BillingFilterDropdown
+                      isOpen={isFilterDropdownOpen}
+                      onClose={() => setIsFilterDropdownOpen(false)}
+                      onApplyFilters={handleApplyFilters}
+                      currentFilters={filters}
+                    />
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setIsSortDropdownOpen(!isSortDropdownOpen);
+                        setIsFilterDropdownOpen(false); // Close filter when opening sort
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Sort bills"
+                    >
+                      <img src={icSort} alt="Sort" className="w-4 h-4" />
+                    </button>
+                    <BillingSortDropdown
+                      isOpen={isSortDropdownOpen}
+                      onClose={() => setIsSortDropdownOpen(false)}
+                      onApplySort={handleApplySort}
+                      currentSort={sortOptions}
+                    />
+                  </div>
                 </div>
               </div>
             <div className="flex space-x-3">
@@ -413,11 +525,11 @@ const Billings = () => {
                             </svg>
                           </button>
                         )}
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                          </svg>
-                        </button>
+                        <BillingActionMenu 
+                          bill={bill} 
+                          onUpdate={handleBillUpdate}
+                          onClose={() => {}} // Action menu handles its own closing
+                        />
                       </div>
                     </td>
                   </tr>
@@ -545,6 +657,7 @@ const Billings = () => {
         onClose={() => setIsMonthlyRentResetModalOpen(false)}
         onResetComplete={handleMonthlyRentReset}
       />
+
     </div>
   );
 };
