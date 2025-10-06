@@ -128,7 +128,10 @@ const RegisterForm = () => {
         phone: formData.phoneNumber,
         role: 'landlord', // Set as landlord for this portal
         dormName: formData.dormName,
-        dormAddress: formData.dormAddress
+        dormAddress: formData.dormAddress,
+        // Use the same email and password for sending tenant emails
+        systemEmail: formData.email,
+        systemEmailPassword: formData.password
       });
 
       if (result.success) {

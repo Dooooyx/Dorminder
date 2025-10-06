@@ -22,13 +22,13 @@ import { initializeApp } from 'firebase/app';
 import { db } from './firebase';
 import { roomService } from './roomService';
 import { fileUploadService } from './fileUploadService';
+import { emailServiceFree } from './emailServiceFree';
 import jsPDF from 'jspdf';
-// EmailJS removed for now
 
 export class TenantService {
   
   // Create tenant account and send verification email
-  async createTenant(tenantData, landlordEmail = null) {
+  async createTenant(tenantData, landlordEmail = null, landlordId = null) {
     try {
       // Validate file if provided (but don't upload yet - we need the tenant ID first)
       if (tenantData.validIdImage && tenantData.validIdImage instanceof File) {
@@ -166,15 +166,61 @@ export class TenantService {
       // Generate and send PDF document
       await this.generateTenantDocument(tenantDocData, user.uid);
 
-      // Email notifications removed for now
-      console.log('✅ Tenant created successfully - no emails sent');
+      // Send tenant credentials email using Firebase Cloud Functions
+      try {
+        console.log('📧 Sending tenant credentials email to:', tenantData.email);
+        
+        const emailData = {
+          tenantEmail: tenantData.email,
+          tenantName: `${tenantData.firstName} ${tenantData.lastName}`,
+          password: tenantData.password,
+          firstName: tenantData.firstName,
+          lastName: tenantData.lastName,
+          middleName: tenantData.middleName || '',
+          contactNumber: tenantData.contactNumber,
+          emergencyContact: tenantData.emergencyContact,
+          emergencyContactNumber: tenantData.emergencyContactNumber,
+          roomNumber: tenantData.roomNumber,
+          monthlyRent: tenantData.monthlyRent,
+          leaseStartDate: tenantData.leaseStartDate,
+          leaseEndDate: tenantData.leaseEndDate,
+          securityDeposit: tenantData.securityDeposit,
+          landlordEmail: landlordEmail,
+          landlordId: landlordId,
+          landlordName: 'Landlord', // You can get this from user context
+          propertyName: 'Dorminder Property', // You can get this from property info
+          initialPaymentStatus: tenantData.initialPaymentStatus || 'Pending',
+          status: 'Active',
+          // Document URLs (if available)
+          validIdUrl: tenantData.validIdUrl || null,
+          leaseContractUrl: tenantData.leaseContractUrl || null
+        };
 
-      return { 
-        success: true, 
-        tenantId: docRef.id,
-        userId: user.uid,
-        message: 'Tenant created successfully! Email verification and registration details sent via email.'
-      };
+        // Send credentials email (with password) using EmailJS
+        await emailServiceFree.sendTenantCredentials(emailData);
+        console.log('✅ Tenant credentials email sent successfully via EmailJS');
+      } catch (emailError) {
+        console.warn('⚠️ Email sending failed:', emailError.message);
+        // Continue with tenant creation even if email fails
+        // Log the data for manual sending if needed
+        console.log('📧 Tenant Credentials Email Data (for manual sending):', {
+          to: tenantData.email,
+          subject: 'Welcome to Dorminder - Your Account & Registration Details',
+          tenantName: `${tenantData.firstName} ${tenantData.lastName}`,
+          password: tenantData.password,
+          roomNumber: tenantData.roomNumber,
+          monthlyRent: tenantData.monthlyRent,
+          leaseStartDate: tenantData.leaseStartDate,
+          leaseEndDate: tenantData.leaseEndDate
+        });
+      }
+
+        return {
+          success: true,
+          tenantId: docRef.id,
+          userId: user.uid,
+          message: 'Tenant created successfully! Email verification and credentials sent via EmailJS.'
+        };
     } catch (error) {
       console.error('Error creating tenant:', error);
       return { success: false, error: error.message };

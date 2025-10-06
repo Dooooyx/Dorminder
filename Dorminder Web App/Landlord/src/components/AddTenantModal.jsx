@@ -371,7 +371,7 @@ const AddTenantModal = ({ isOpen, onClose, onAddTenant }) => {
         };
 
         // Create tenant using service
-        const result = await tenantService.createTenant(tenantData, user?.email);
+        const result = await tenantService.createTenant(tenantData, user?.email, user?.uid);
         
         if (result.success) {
           // Show success popup instead of closing immediately

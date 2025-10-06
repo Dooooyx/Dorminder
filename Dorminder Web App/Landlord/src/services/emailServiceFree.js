@@ -16,22 +16,25 @@ export const emailServiceFree = {
         to_email: tenantData.tenantEmail,
         tenant_name: tenantData.tenantName,
         password: tenantData.password,
-        landlord_name: tenantData.landlordName,
-        property_name: tenantData.propertyName,
+        landlord_name: tenantData.landlordName || 'Landlord', // Fallback if not provided
+        property_name: tenantData.propertyName || 'Dorminder Property', // Fallback if not provided
         first_name: tenantData.firstName,
         last_name: tenantData.lastName,
-        middle_initial: tenantData.middleInitial,
+        middle_initial: tenantData.middleName || '', // Fixed: was middleInitial
         contact_number: tenantData.contactNumber,
-        email_address: tenantData.emailAddress,
-        emergency_contact_name: tenantData.emergencyContactName,
+        email_address: tenantData.tenantEmail, // Fixed: use tenantEmail instead of emailAddress
+        emergency_contact_name: tenantData.emergencyContact, // Fixed: was emergencyContactName
         emergency_contact_number: tenantData.emergencyContactNumber,
-        account_email: tenantData.accountEmail,
+        account_email: tenantData.tenantEmail, // Fixed: use tenantEmail
         room_number: tenantData.roomNumber,
-        rent_amount: tenantData.rentAmount,
-        initial_payment_status: tenantData.initialPaymentStatus,
+        rent_amount: tenantData.monthlyRent, // Fixed: was rentAmount
+        initial_payment_status: tenantData.initialPaymentStatus || 'Pending', // Fixed: add fallback
         lease_start_date: tenantData.leaseStartDate,
         lease_end_date: tenantData.leaseEndDate,
-        status: tenantData.status
+        status: tenantData.status || 'Active',
+        // Document URLs
+        valid_id_url: tenantData.validIdUrl || null,
+        lease_contract_url: tenantData.leaseContractUrl || null
       };
 
       console.log('📧 Sending tenant credentials email to:', tenantData.tenantEmail);

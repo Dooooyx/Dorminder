@@ -92,13 +92,30 @@ export class AuthService {
         updatedAt: new Date()
       };
 
-      // If landlord, also store property information
+      // If landlord, also store property information and email credentials
       if (userData.role === 'landlord' && userData.dormName && userData.dormAddress) {
         userDocData.propertyName = userData.dormName;
         userDocData.propertyAddress = userData.dormAddress;
+        
+        // Store email credentials for sending tenant emails
+        if (userData.systemEmail && userData.systemEmailPassword) {
+          userDocData.systemEmail = userData.systemEmail;
+          userDocData.systemEmailPassword = userData.systemEmailPassword;
+        }
       }
 
       await setDoc(doc(db, 'users', user.uid), userDocData);
+
+      // Store email credentials separately for security (if landlord)
+      if (userData.role === 'landlord' && userData.systemEmail && userData.systemEmailPassword) {
+        const emailCredentialsData = {
+          landlordId: user.uid,
+          gmailUser: userData.systemEmail,
+          gmailPassword: userData.systemEmailPassword,
+          updatedAt: new Date()
+        };
+        await setDoc(doc(db, 'landlordEmailCredentials', user.uid), emailCredentialsData);
+      }
 
       return { 
         success: true, 

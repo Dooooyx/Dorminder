@@ -1,11 +1,11 @@
 {
   "functions": {
-    "source": "backend/functions",
+    "source": "Backend/functions",
     "runtime": "nodejs18"
   },
   "firestore": {
-    "rules": "backend/firestore/rules/firestore.rules",
-    "indexes": "backend/firestore/indexes.json"
+    "rules": "Backend/firestore/rules/firestore.rules",
+    "indexes": "Backend/firestore/indexes.json"
   },
   "storage": {
     "rules": "storage.rules"
