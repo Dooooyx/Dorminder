@@ -113,9 +113,9 @@ const TenantDashboard = ({ navigation }) => {
   };
 
   const handleViewMore = () => {
-    console.log('View More pressed');
-    // Navigate to payment screen instead of showing modal
-    navigation.navigate('TenantPayment');
+    console.log('View More pressed - showing bill breakdown');
+    // Show Bill Breakdown modal instead of navigating to payment screen
+    setIsBillBreakdownVisible(true);
   };
 
   // BurgerNav handlers
