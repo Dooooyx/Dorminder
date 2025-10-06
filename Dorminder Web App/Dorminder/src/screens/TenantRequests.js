@@ -120,8 +120,8 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   logo: {
-    width: 160,
-    height: 50,
+    width: 140,
+    height: 45,
     marginBottom: 20,
   },
   titleSection: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 35,
     fontWeight: '600',
-    color: '#1A202C',
+    color: '#3D5A80',
     marginBottom: 4,
     textAlign: 'left',
   },

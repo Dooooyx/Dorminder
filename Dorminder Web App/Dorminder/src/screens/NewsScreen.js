@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import BotNav from '../components/BotNav';
 
@@ -82,7 +83,7 @@ const NewsScreen = ({ navigation }) => {
             <Text style={styles.statusText}>{newsItem.status}</Text>
           </View>
         </View>
-        <Text style={styles.title}>{newsItem.title}</Text>
+        <Text style={styles.cardTitle}>{newsItem.title}</Text>
         <Text style={styles.schedule}>{newsItem.schedule}</Text>
         <Text style={styles.description}>{newsItem.description}</Text>
         <Text style={styles.postedBy}>Posted By: {newsItem.postedBy}</Text>
@@ -93,11 +94,19 @@ const NewsScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.brandName}>Dorminder</Text>
-        <Text style={styles.title}>News</Text>
-        <Text style={styles.subtitle}>
-          View important updates, and official notices from the landlord in one place.
-        </Text>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../assets/logo/logo_dorminder.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>News</Text>
+          <Text style={styles.subtitle}>
+            View important updates, and official notices from the landlord in one place.
+          </Text>
+        </View>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -124,23 +133,29 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
     alignItems: 'center',
   },
-  brandName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E40AF',
+  logoContainer: {
+    alignItems: 'center',
     marginBottom: 8,
   },
+  textContainer: {
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  logo: {
+    width: 140,
+    height: 45,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1E3A8A',
+    fontSize: 35,
+    fontWeight: '600',
+    color: '#3D5A80',
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
-    textAlign: 'center',
+    textAlign: 'left',
     lineHeight: 20,
   },
   scrollView: {
@@ -195,7 +210,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  title: {
+  cardTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
