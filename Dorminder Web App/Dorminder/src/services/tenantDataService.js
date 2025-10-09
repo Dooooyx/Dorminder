@@ -250,6 +250,8 @@ export class TenantDataService {
   // Get news for tenant's property
   async getNews(propertyId) {
     try {
+      console.log('🔍 TenantDataService.getNews called with propertyId:', propertyId);
+      
       const newsRef = collection(db, 'announcements'); // Keep collection name as 'announcements' for backend compatibility
       const q = query(
         newsRef, 
@@ -257,23 +259,63 @@ export class TenantDataService {
         orderBy('createdAt', 'desc'),
         limit(5)
       );
+      
+      console.log('📋 Executing Firestore query for announcements...');
       const querySnapshot = await getDocs(q);
+      console.log('📊 Query snapshot size:', querySnapshot.size);
       
       const newsItems = [];
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('📄 Found announcement:', { id: doc.id, title: data.title, propertyId: data.propertyId });
         newsItems.push({
           id: doc.id,
-          ...doc.data()
+          ...data
         });
       });
       
+      console.log('✅ Final news items:', newsItems);
       return { success: true, data: newsItems };
     } catch (error) {
-      console.error('Error getting news:', error);
+      console.error('❌ Error getting news:', error);
       return { success: false, error: error.message };
     }
   }
   
+  // Get all announcements (fallback for debugging)
+  async getAllAnnouncements() {
+    try {
+      console.log('🔍 TenantDataService.getAllAnnouncements called (fallback)');
+      
+      const newsRef = collection(db, 'announcements');
+      const q = query(
+        newsRef, 
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+      
+      console.log('📋 Executing fallback Firestore query for all announcements...');
+      const querySnapshot = await getDocs(q);
+      console.log('📊 Fallback query snapshot size:', querySnapshot.size);
+      
+      const newsItems = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('📄 Fallback found announcement:', { id: doc.id, title: data.title, propertyId: data.propertyId });
+        newsItems.push({
+          id: doc.id,
+          ...data
+        });
+      });
+      
+      console.log('✅ Fallback final news items:', newsItems);
+      return { success: true, data: newsItems };
+    } catch (error) {
+      console.error('❌ Error getting all announcements:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Get complete tenant dashboard data
   async getTenantDashboardData(userId) {
     try {

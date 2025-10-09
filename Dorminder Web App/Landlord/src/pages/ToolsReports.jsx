@@ -4,6 +4,7 @@ import TopNav from '../components/TopNav';
 import AnnouncementForm from '../components/AnnouncementForm';
 import IncidentReportForm from '../components/IncidentReportForm';
 import { incidentService } from '../services/incidentService';
+import { FirestoreService } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const ToolsReports = () => {
@@ -18,6 +19,7 @@ const ToolsReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const { user } = useAuth();
+  const firestoreService = new FirestoreService();
 
   const tabs = [
     { id: 'announcements', label: 'Announcements', icon: '📢' },
@@ -31,14 +33,25 @@ const ToolsReports = () => {
     }
   }, [activeTab]);
 
-  const loadAnnouncements = () => {
+  const loadAnnouncements = async () => {
     try {
-      const savedAnnouncements = localStorage.getItem('announcements');
-      if (savedAnnouncements) {
-        setAnnouncements(JSON.parse(savedAnnouncements));
+      setLoading(true);
+      const propertyId = user?.propertyId || 'default';
+      console.log('🏢 Landlord loading announcements for propertyId:', propertyId);
+      
+      const result = await firestoreService.getAnnouncementsByProperty(propertyId);
+      console.log('📢 Landlord announcements result:', result);
+      
+      if (result.success) {
+        console.log('✅ Landlord loaded announcements:', result.data);
+        setAnnouncements(result.data);
+      } else {
+        console.error('❌ Error loading announcements:', result.error);
+        setAnnouncements([]);
       }
     } catch (error) {
-      console.error('Error loading announcements:', error);
+      console.error('❌ Error loading announcements:', error);
+      setAnnouncements([]);
     } finally {
       setLoading(false);
     }
@@ -58,41 +71,60 @@ const ToolsReports = () => {
     }
   };
 
-  const handleSaveAnnouncement = (announcementData) => {
+  const handleSaveAnnouncement = async (announcementData) => {
     try {
-      let updatedAnnouncements;
+      const propertyId = user?.propertyId || 'default';
+      const landlordId = user?.uid || 'default';
       
+      console.log('🏢 Landlord saving announcement with propertyId:', propertyId);
+      console.log('👤 Landlord user data:', user);
+      
+      const announcementToSave = {
+        ...announcementData,
+        propertyId,
+        landlordId,
+        landlordName: user?.displayName || 'Landlord',
+        postedBy: user?.displayName || 'Landlord'
+      };
+      
+      console.log('💾 Announcement to save:', announcementToSave);
+
+      let result;
       if (editingAnnouncement) {
-        updatedAnnouncements = announcements.map(ann => 
-          ann.id === editingAnnouncement.id 
-            ? { ...ann, ...announcementData, updatedAt: new Date().toISOString() }
-            : ann
-        );
+        result = await firestoreService.updateAnnouncement(editingAnnouncement.id, announcementToSave);
       } else {
-        const newAnnouncement = {
-          id: Date.now().toString(),
-          ...announcementData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        updatedAnnouncements = [newAnnouncement, ...announcements];
+        result = await firestoreService.createAnnouncement(announcementToSave);
       }
 
-      setAnnouncements(updatedAnnouncements);
-      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
-      setIsFormOpen(false);
-      setEditingAnnouncement(null);
+      if (result.success) {
+        // Reload announcements from Firestore
+        await loadAnnouncements();
+        setIsFormOpen(false);
+        setEditingAnnouncement(null);
+        alert('Announcement saved successfully!');
+      } else {
+        alert('Failed to save announcement: ' + result.error);
+      }
     } catch (error) {
       console.error('Error saving announcement:', error);
       alert('Failed to save announcement');
     }
   };
 
-  const handleDeleteAnnouncement = (id) => {
+  const handleDeleteAnnouncement = async (id) => {
     if (window.confirm('Are you sure you want to delete this announcement?')) {
-      const updatedAnnouncements = announcements.filter(ann => ann.id !== id);
-      setAnnouncements(updatedAnnouncements);
-      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+      try {
+        const result = await firestoreService.deleteAnnouncement(id);
+        if (result.success) {
+          await loadAnnouncements();
+          alert('Announcement deleted successfully!');
+        } else {
+          alert('Failed to delete announcement: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error deleting announcement:', error);
+        alert('Failed to delete announcement');
+      }
     }
   };
 
@@ -138,8 +170,9 @@ const ToolsReports = () => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'active': return 'bg-green-100 text-green-800';
+      case 'upcoming': return 'bg-blue-100 text-blue-800';
       case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'archived': return 'bg-blue-100 text-blue-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
       case 'open': return 'bg-red-100 text-red-800';
       case 'resolved': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -160,6 +193,30 @@ const ToolsReports = () => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatTimeRange = (announcement) => {
+    const parts = [];
+    
+    // Date range
+    if (announcement.fromDate && announcement.untilDate) {
+      const fromDate = formatDate(announcement.fromDate);
+      const untilDate = formatDate(announcement.untilDate);
+      parts.push(`${fromDate} to ${untilDate}`);
+    } else if (announcement.fromDate) {
+      parts.push(formatDate(announcement.fromDate));
+    }
+    
+    // Time range
+    if (announcement.fromTime && announcement.untilTime) {
+      parts.push(`${announcement.fromTime} to ${announcement.untilTime}`);
+    } else if (announcement.fromTime) {
+      parts.push(`from ${announcement.fromTime}`);
+    } else if (announcement.untilTime) {
+      parts.push(`until ${announcement.untilTime}`);
+    }
+    
+    return parts.length > 0 ? parts.join(' | ') : 'No time specified';
   };
 
   const filteredIncidents = incidents.filter(incident => {
@@ -216,12 +273,10 @@ const ToolsReports = () => {
                 <div className="flex-1">
                   <h4 className="text-lg font-semibold text-gray-900">{announcement.title}</h4>
                   <p className="text-sm text-gray-600 mt-1">
-                    {formatDate(announcement.date)}
-                    {announcement.scheduleType === 'Scheduled' && announcement.scheduleFrom && (
-                      <span className="ml-2">
-                        • {formatDate(announcement.scheduleFrom)} to {formatDate(announcement.scheduleUntil)}
-                      </span>
-                    )}
+                    📅 {formatDate(announcement.createdAt?.toDate?.() || announcement.createdAt || announcement.date)}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    ⏰ {formatTimeRange(announcement)}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">

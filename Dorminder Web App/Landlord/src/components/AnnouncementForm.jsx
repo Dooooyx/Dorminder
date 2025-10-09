@@ -5,10 +5,11 @@ const AnnouncementForm = ({ onSave, onCancel, initialData = null }) => {
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    scheduleType: 'Immediate',
-    scheduleFrom: '',
-    scheduleUntil: '',
-    status: 'active',
+    fromDate: '',
+    untilDate: '',
+    fromTime: '',
+    untilTime: '',
+    status: 'Upcoming',
   });
 
   useEffect(() => {
@@ -17,10 +18,11 @@ const AnnouncementForm = ({ onSave, onCancel, initialData = null }) => {
         title: initialData.title || '',
         description: initialData.description || '',
         date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        scheduleType: initialData.scheduleType || 'Immediate',
-        scheduleFrom: initialData.scheduleFrom ? new Date(initialData.scheduleFrom).toISOString().split('T')[0] : '',
-        scheduleUntil: initialData.scheduleUntil ? new Date(initialData.scheduleUntil).toISOString().split('T')[0] : '',
-        status: initialData.status || 'active',
+        fromDate: initialData.fromDate || '',
+        untilDate: initialData.untilDate || '',
+        fromTime: initialData.fromTime || '',
+        untilTime: initialData.untilTime || '',
+        status: initialData.status || 'Upcoming',
       });
     }
   }, [initialData]);
@@ -45,13 +47,17 @@ const AnnouncementForm = ({ onSave, onCancel, initialData = null }) => {
       alert('Please enter a description');
       return;
     }
-    if (formData.scheduleType === 'Scheduled') {
-      if (!formData.scheduleFrom || !formData.scheduleUntil) {
-        alert('Please select both start and end dates for scheduled announcements');
+    // Validate time range if provided
+    if (formData.fromDate && formData.untilDate) {
+      if (new Date(formData.fromDate) > new Date(formData.untilDate)) {
+        alert('Until date must be after From date');
         return;
       }
-      if (new Date(formData.scheduleFrom) > new Date(formData.scheduleUntil)) {
-        alert('End date must be after start date');
+    }
+    
+    if (formData.fromTime && formData.untilTime && formData.fromDate === formData.untilDate) {
+      if (formData.fromTime >= formData.untilTime) {
+        alert('Until time must be after From time');
         return;
       }
     }
@@ -98,67 +104,61 @@ const AnnouncementForm = ({ onSave, onCancel, initialData = null }) => {
           />
         </div>
 
-        {/* Date */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date
-          </label>
-          <input
-            type="date"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Schedule Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Schedule Type
-          </label>
-          <select
-            name="scheduleType"
-            value={formData.scheduleType}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="Immediate">Post Immediately</option>
-            <option value="Scheduled">Schedule for Later</option>
-          </select>
-        </div>
-
-        {/* Scheduled Date Range */}
-        {formData.scheduleType === 'Scheduled' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                From Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="scheduleFrom"
-                value={formData.scheduleFrom}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required={formData.scheduleType === 'Scheduled'}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Until Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="scheduleUntil"
-                value={formData.scheduleUntil}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required={formData.scheduleType === 'Scheduled'}
-              />
-            </div>
+        {/* Date Range */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              From Date
+            </label>
+            <input
+              type="date"
+              name="fromDate"
+              value={formData.fromDate}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-        )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Until Date
+            </label>
+            <input
+              type="date"
+              name="untilDate"
+              value={formData.untilDate}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Time Range */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              From Time
+            </label>
+            <input
+              type="time"
+              name="fromTime"
+              value={formData.fromTime}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Until Time
+            </label>
+            <input
+              type="time"
+              name="untilTime"
+              value={formData.untilTime}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
 
         {/* Status */}
         <div>
@@ -171,9 +171,8 @@ const AnnouncementForm = ({ onSave, onCancel, initialData = null }) => {
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Active">Active</option>
           </select>
         </div>
 

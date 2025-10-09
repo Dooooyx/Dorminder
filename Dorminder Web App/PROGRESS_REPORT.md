@@ -151,6 +151,14 @@
 - ✅ Gallery modal for viewing multiple images
 - ✅ Error handling for failed image loads
 
+### **📢 Announcement System**
+- ✅ Time range fields (From Date, Until Date, From Time, Until Time)
+- ✅ Status management (Upcoming/Active)
+- ✅ Formatted display: "[From Date] to [Until Date] | [From Time] to [Until Time]"
+- ✅ Firestore integration for real-time updates
+- ✅ Tenant News screen integration
+- ✅ Landlord announcement management with CRUD operations
+
 ---
 
 ## 🚧 **WHAT NEEDS TO BE IMPLEMENTED/FUNCTIONAL:**
@@ -174,6 +182,12 @@
    - **Features**: Multiple image upload, gallery view, error handling
    - **Action**: Test complete flow once Firestore index finishes building
    - **Expected**: Images should display in request cards with gallery functionality
+
+4. **📢 Announcement System** ✅ **COMPLETED**
+   - **Status**: Fully implemented with time ranges and status management
+   - **Features**: From/Until dates and times, Upcoming/Active status, real-time updates
+   - **Integration**: Both landlord creation and tenant viewing working
+   - **Format**: "[From Date] to [Until Date] | [From Time] to [Until Time]"
 
 ---
 

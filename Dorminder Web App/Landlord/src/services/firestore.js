@@ -272,6 +272,32 @@ export class FirestoreService {
     }
   }
 
+  // Update announcement
+  async updateAnnouncement(announcementId, updateData) {
+    try {
+      const announcementRef = doc(db, 'announcements', announcementId);
+      await updateDoc(announcementRef, {
+        ...updateData,
+        updatedAt: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Delete announcement
+  async deleteAnnouncement(announcementId) {
+    try {
+      await deleteDoc(doc(db, 'announcements', announcementId));
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ===== REAL-TIME LISTENERS =====
 
   // Listen to requests in real-time (for landlords)
