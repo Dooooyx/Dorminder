@@ -18,26 +18,29 @@ import { requestService } from '../services/requestService';
 import { fonts } from '../utils/fonts';
 import { handleTabNavigation } from '../utils/navigation';
 import { commonStyles } from '../styles/commonStyles';
+import { useTenantData } from '../hooks/useTenantData';
 
 const { width } = Dimensions.get('window');
 
 const TenantRequests = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('ongoing');
   const [requests, setRequests] = useState([]);
+  
+  // Use custom hook for tenant data
+  const { currentUser } = useTenantData();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const user = authService.getCurrentUser();
-        if (!user) return;
-        const res = await requestService.getTenantRequests(user.uid);
+        if (!currentUser) return;
+        const res = await requestService.getTenantRequests(currentUser.uid);
         if (res.success) setRequests(res.requests);
       } catch (e) {
         console.log('Failed to load requests', e);
       }
     };
     load();
-  }, []);
+  }, [currentUser]);
 
   const handleTabPress = (tabId) => {
     if (tabId === 'ongoing' || tabId === 'completed') {

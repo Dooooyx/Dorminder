@@ -144,7 +144,8 @@ export class AuthService {
 
   // Get current user
   getCurrentUser() {
-    return this.currentUser;
+    // Return from Firebase auth if available, fallback to cached value
+    return auth.currentUser || this.currentUser;
   }
 
   // Get current user role

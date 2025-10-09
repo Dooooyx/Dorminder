@@ -13,6 +13,7 @@ import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import { authService } from '../services/auth';
 import { billingService } from '../services/billingService';
+import { tenantDataService } from '../services/tenantDataService';
 import BillBreakdownModal from '../components/BillBreakdownModal';
 import ReceiptModal from '../components/ReceiptModal';
 import { fonts } from '../utils/fonts';
@@ -24,7 +25,12 @@ const TenantPayment = ({ navigation }) => {
   const [activePaymentTab, setActivePaymentTab] = useState('bills');
   
   // Use custom hook for tenant data
-  const { tenantData, loading, error, userName } = useTenantData();
+  const { tenantData, loading, error, userName, currentUser } = useTenantData();
+  
+  // Payment state
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [localTenantData, setLocalTenantData] = useState(null);
   
   // Billing state
   const [bills, setBills] = useState([]);
@@ -54,14 +60,14 @@ const TenantPayment = ({ navigation }) => {
   useEffect(() => {
     const fetchData = async () => {
       if (!currentUser) {
-        setError('No user logged in');
-        setLoading(false);
+        setPaymentError('No user logged in');
+        setPaymentLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
-        setError('');
+        setPaymentLoading(true);
+        setPaymentError('');
         
         console.log('Getting tenant data for user:', currentUser.uid);
         
@@ -73,14 +79,14 @@ const TenantPayment = ({ navigation }) => {
         
         if (!tenantResult.success) {
           console.log('Tenant not found:', tenantResult.error);
-          setError('Tenant data not found. Please contact your landlord.');
-          setLoading(false);
+          setPaymentError('Tenant data not found. Please contact your landlord.');
+          setPaymentLoading(false);
           return;
         }
         
         const tenant = tenantResult.data;
         console.log('Tenant data:', tenant);
-        setTenantData(tenant);
+        setLocalTenantData(tenant);
         
         if (billingResult.success) {
           setBills(billingResult.data);
@@ -95,9 +101,9 @@ const TenantPayment = ({ navigation }) => {
         
       } catch (error) {
         console.error('Error fetching data:', error);
-        setError('An unexpected error occurred');
+        setPaymentError('An unexpected error occurred');
       } finally {
-        setLoading(false);
+        setPaymentLoading(false);
       }
     };
 

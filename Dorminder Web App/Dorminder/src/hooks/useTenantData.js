@@ -7,15 +7,28 @@ export const useTenantData = () => {
   const [tenantData, setTenantData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   
-  // Get current user
-  const currentUser = authService.getCurrentUser();
   const userName = tenantData?.firstName || 'Tenant';
+
+  useEffect(() => {
+    // Set up auth state listener
+    const unsubscribe = authService.addAuthStateListener((user) => {
+      setCurrentUser(user);
+    });
+
+    // Initial user check
+    const user = authService.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!currentUser) {
-        setError('No user logged in');
         setLoading(false);
         return;
       }

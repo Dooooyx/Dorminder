@@ -16,6 +16,7 @@ import BurgerNav from '../components/BurgerNav';
 import TenantInfoHeader from '../components/TenantInfoHeader';
 import { authService } from '../services/auth';
 import { billingService } from '../services/billingService';
+import { tenantDataService } from '../services/tenantDataService';
 import BillBreakdownModal from '../components/BillBreakdownModal';
 import { fonts } from '../utils/fonts';
 import { useTenantData } from '../hooks/useTenantData';
@@ -27,7 +28,12 @@ const TenantDashboard = ({ navigation }) => {
   const [isBurgerNavVisible, setIsBurgerNavVisible] = React.useState(false);
   
   // Use custom hook for tenant data
-  const { tenantData, loading, error, userName } = useTenantData();
+  const { tenantData, loading, error, userName, currentUser } = useTenantData();
+  
+  // Dashboard state
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState('');
   
   // Billing state
   const [currentBalance, setCurrentBalance] = useState(0);
@@ -38,14 +44,14 @@ const TenantDashboard = ({ navigation }) => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!currentUser) {
-        setError('No user logged in');
-        setLoading(false);
+        setDashboardError('No user logged in');
+        setDashboardLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
-        setError('');
+        setDashboardLoading(true);
+        setDashboardError('');
         
         console.log('👤 Current user UID:', currentUser.uid);
         
@@ -58,7 +64,7 @@ const TenantDashboard = ({ navigation }) => {
         if (dashboardResult.success) {
           setDashboardData(dashboardResult.data);
         } else {
-          setError(dashboardResult.error || 'Failed to load dashboard data');
+          setDashboardError(dashboardResult.error || 'Failed to load dashboard data');
         }
 
         if (billingResult.success) {
@@ -70,9 +76,9 @@ const TenantDashboard = ({ navigation }) => {
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setError('An unexpected error occurred');
+        setDashboardError('An unexpected error occurred');
       } finally {
-        setLoading(false);
+        setDashboardLoading(false);
       }
     };
 

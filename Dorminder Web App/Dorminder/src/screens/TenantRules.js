@@ -13,6 +13,7 @@ import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import { authService } from '../services/auth';
 import { rulesService } from '../services/rulesService';
+import { tenantDataService } from '../services/tenantDataService';
 import { fonts } from '../utils/fonts';
 import { useTenantData } from '../hooks/useTenantData';
 import { handleTabNavigation, handleNotificationPress, handleProfilePress, handleMenuPress } from '../utils/navigation';
@@ -21,11 +22,13 @@ import { commonStyles } from '../styles/commonStyles';
 const TenantRules = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('rules');
   const [rules, setRules] = useState([]);
-  const [rulesLoading, setRulesLoading] = useState(true);
-  const [rulesError, setRulesError] = useState('');
   
   // Use custom hook for tenant data
-  const { tenantData, loading, error, userName } = useTenantData();
+  const { tenantData, loading, error, userName, currentUser } = useTenantData();
+  
+  // Rules state
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesError, setRulesError] = useState('');
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
@@ -49,14 +52,14 @@ const TenantRules = ({ navigation }) => {
   useEffect(() => {
     const fetchRules = async () => {
       if (!currentUser) {
-        setError('No user logged in');
-        setLoading(false);
+        setRulesError('No user logged in');
+        setRulesLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
-        setError('');
+        setRulesLoading(true);
+        setRulesError('');
         
         // Get tenant data to find property ID
         console.log('Getting tenant data for user:', currentUser.uid);
@@ -64,8 +67,8 @@ const TenantRules = ({ navigation }) => {
         
         if (!tenantResult.success) {
           console.log('Tenant not found:', tenantResult.error);
-          setError('Tenant data not found. Please contact your landlord.');
-          setLoading(false);
+          setRulesError('Tenant data not found. Please contact your landlord.');
+          setRulesLoading(false);
           return;
         }
         
@@ -75,12 +78,9 @@ const TenantRules = ({ navigation }) => {
         console.log('Tenant property ID:', propertyId);
         console.log('Tenant data:', tenant);
         
-        // Store tenant data for use in TenantInfoHeader
-        setTenantData(tenant);
-        
         if (!propertyId) {
-          setError('Property ID not found in tenant data');
-          setLoading(false);
+          setRulesError('Property ID not found in tenant data');
+          setRulesLoading(false);
           return;
         }
         
@@ -91,13 +91,13 @@ const TenantRules = ({ navigation }) => {
           setRules(result.data);
         } else {
           console.log('Rules error:', result.error);
-          setError(result.error || 'Failed to load rules');
+          setRulesError(result.error || 'Failed to load rules');
         }
       } catch (error) {
         console.error('Error fetching rules:', error);
-        setError('An unexpected error occurred');
+        setRulesError('An unexpected error occurred');
       } finally {
-        setLoading(false);
+        setRulesLoading(false);
       }
     };
 
