@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import BotNav from '../components/BotNav';
 import { requestService } from '../services/requestService';
 import { cloudinaryService } from '../services/cloudinaryService';
+import { fonts } from '../utils/fonts';
 
 const NewRequestForm = ({ navigation }) => {
   const [title, setTitle] = useState('');
@@ -332,12 +333,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 35,
-    fontWeight: 'bold',
+    fontFamily: fonts.semiBold,
     color: '#2C5282',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#718096',
   },
   content: {
@@ -363,7 +365,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: '#1A202C',
     marginBottom: 8,
   },
@@ -390,6 +392,7 @@ const styles = StyleSheet.create({
   },
   characterCount: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#A0AEC0',
     textAlign: 'right',
     marginTop: 4,

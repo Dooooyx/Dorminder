@@ -12,16 +12,19 @@ import TenantInfoHeader from '../components/TenantInfoHeader';
 import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import { authService } from '../services/auth';
-import { tenantDataService } from '../services/tenantDataService';
 import { billingService } from '../services/billingService';
 import BillBreakdownModal from '../components/BillBreakdownModal';
 import ReceiptModal from '../components/ReceiptModal';
+import { fonts } from '../utils/fonts';
+import { useTenantData } from '../hooks/useTenantData';
+import { handleTabNavigation, handleNotificationPress, handleProfilePress, handleMenuPress } from '../utils/navigation';
+import { commonStyles } from '../styles/commonStyles';
 
 const TenantPayment = ({ navigation }) => {
   const [activePaymentTab, setActivePaymentTab] = useState('bills');
-  const [tenantData, setTenantData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  
+  // Use custom hook for tenant data
+  const { tenantData, loading, error, userName } = useTenantData();
   
   // Billing state
   const [bills, setBills] = useState([]);
@@ -30,24 +33,9 @@ const TenantPayment = ({ navigation }) => {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [isReceiptModalVisible, setIsReceiptModalVisible] = useState(false);
   const [receiptText, setReceiptText] = useState('');
-  
-  // Get current user
-  const currentUser = authService.getCurrentUser();
-  const userName = tenantData?.firstName || 'Tenant';
 
   const handleTabPress = (tabId) => {
-    if (tabId === 'dashboard') {
-      navigation.navigate('TenantDashboard');
-    } else if (tabId === 'news') {
-      navigation.navigate('NewsScreen');
-    } else if (tabId === 'rules') {
-      navigation.navigate('TenantRules');
-    } else if (tabId === 'request') {
-      navigation.navigate('TenantRequests');
-    } else if (tabId === 'payment') {
-      // Already on payment screen, do nothing
-      return;
-    }
+    handleTabNavigation(navigation, tabId, 'TenantPayment');
   };
 
   const handleNotificationPress = () => {
@@ -467,12 +455,12 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: 'rgba(255, 255, 255, 0.7)',
   },
   activeTabText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   activeIndicator: {
     position: 'absolute',
@@ -629,3 +617,4 @@ const styles = StyleSheet.create({
 });
 
 export default TenantPayment;
+

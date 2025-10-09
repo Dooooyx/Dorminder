@@ -47,7 +47,7 @@ export class RulesService {
         const q = query(
           rulesRef, 
           where('propertyId', '==', propertyId),
-          orderBy('createdAt', 'desc')
+          orderBy('order', 'asc')
         );
         const querySnapshot = await getDocs(q);
         
@@ -79,11 +79,11 @@ export class RulesService {
             });
           });
           
-          // Sort by createdAt manually since we can't use orderBy
+          // Sort by order manually since we can't use orderBy
           rules.sort((a, b) => {
-            const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-            const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-            return bTime - aTime; // Descending order
+            const aOrder = a.order || 999;
+            const bOrder = b.order || 999;
+            return aOrder - bOrder; // Ascending order (1-4)
           });
           
           return { success: true, data: rules };

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import { fonts } from '../utils/fonts';
 import DashboardIcon from '../assets/icons/ic_dashboard.png';
-import NotificationIcon from '../assets/icons/ic_notification.png';
+import NewsIcon from '../assets/icons/ic_news.png';
 import RulesIcon from '../assets/icons/ic_rules.png';
 import RequestIcon from '../assets/icons/ic_request.png';
 import PaymentIcon from '../assets/icons/ic_payment.png';
@@ -9,7 +10,7 @@ import PaymentIcon from '../assets/icons/ic_payment.png';
 const BotNav = ({ activeTab, onTabPress }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-    { id: 'news', label: 'News', icon: NotificationIcon },
+    { id: 'news', label: 'News', icon: NewsIcon },
     { id: 'rules', label: 'Rules', icon: RulesIcon },
     { id: 'request', label: 'Requests', icon: RequestIcon },
     { id: 'payment', label: 'Payment', icon: PaymentIcon },
@@ -55,15 +56,22 @@ const styles = StyleSheet.create({
   },
   activeTab: { },
   tabIcon: { 
-    width: 24, 
-    height: 24, 
+    width: 30, 
+    height: 30, 
     marginBottom: 4, 
     tintColor: '#000000',
     alignSelf: 'center'
   },
   activeTabIcon: { tintColor: '#EE6C4D' },
-  tabLabel: { fontSize: 12, color: '#000000', fontWeight: '500' },
-  activeTabLabel: { color: '#EE6C4D', fontWeight: '600' },
+  tabLabel: { 
+    fontSize: 12, 
+    color: '#000000', 
+    fontFamily: fonts.medium,
+  },
+  activeTabLabel: { 
+    color: '#EE6C4D', 
+    fontFamily: fonts.semiBold,
+  },
 });
 
 export default BotNav;

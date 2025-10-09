@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
   const [sortOptions, setSortOptions] = useState({
-    date: currentSort?.date || 'descending',
-    amount: currentSort?.amount || 'descending',
-    tenant: currentSort?.tenant || 'a-z',
-    room: currentSort?.room || 'a-z',
-    status: currentSort?.status || 'a-z'
+    date: currentSort?.date || null,
+    amount: currentSort?.amount || null,
+    tenant: currentSort?.tenant || null,
+    room: currentSort?.room || null,
+    status: currentSort?.status || null
   });
 
   const dropdownRef = useRef(null);
@@ -28,19 +28,29 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
   }, [isOpen, onClose]);
 
   const handleSortChange = (field, value) => {
-    setSortOptions(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setSortOptions(prev => {
+      // If clicking the same value that's already selected, unmark it (set to null)
+      if (prev[field] === value) {
+        return {
+          ...prev,
+          [field]: null
+        };
+      }
+      // Otherwise, set the new value
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
   };
 
   const handleReset = () => {
     setSortOptions({
-      date: 'descending',
-      amount: 'descending',
-      tenant: 'a-z',
-      room: 'a-z',
-      status: 'a-z'
+      date: null,
+      amount: null,
+      tenant: null,
+      room: null,
+      status: null
     });
   };
 
@@ -87,7 +97,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="date"
                   value="ascending"
                   checked={sortOptions.date === 'ascending'}
-                  onChange={(e) => handleSortChange('date', e.target.value)}
+                  onClick={(e) => handleSortChange('date', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Ascending</span>
@@ -98,7 +108,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="date"
                   value="descending"
                   checked={sortOptions.date === 'descending'}
-                  onChange={(e) => handleSortChange('date', e.target.value)}
+                  onClick={(e) => handleSortChange('date', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Descending</span>
@@ -116,7 +126,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="amount"
                   value="ascending"
                   checked={sortOptions.amount === 'ascending'}
-                  onChange={(e) => handleSortChange('amount', e.target.value)}
+                  onClick={(e) => handleSortChange('amount', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Low to High</span>
@@ -127,7 +137,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="amount"
                   value="descending"
                   checked={sortOptions.amount === 'descending'}
-                  onChange={(e) => handleSortChange('amount', e.target.value)}
+                  onClick={(e) => handleSortChange('amount', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">High to Low</span>
@@ -145,7 +155,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="tenant"
                   value="a-z"
                   checked={sortOptions.tenant === 'a-z'}
-                  onChange={(e) => handleSortChange('tenant', e.target.value)}
+                  onClick={(e) => handleSortChange('tenant', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">A-Z</span>
@@ -156,7 +166,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="tenant"
                   value="z-a"
                   checked={sortOptions.tenant === 'z-a'}
-                  onChange={(e) => handleSortChange('tenant', e.target.value)}
+                  onClick={(e) => handleSortChange('tenant', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Z-A</span>
@@ -174,7 +184,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="room"
                   value="a-z"
                   checked={sortOptions.room === 'a-z'}
-                  onChange={(e) => handleSortChange('room', e.target.value)}
+                  onClick={(e) => handleSortChange('room', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">A-Z</span>
@@ -185,7 +195,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="room"
                   value="z-a"
                   checked={sortOptions.room === 'z-a'}
-                  onChange={(e) => handleSortChange('room', e.target.value)}
+                  onClick={(e) => handleSortChange('room', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Z-A</span>
@@ -203,7 +213,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="status"
                   value="a-z"
                   checked={sortOptions.status === 'a-z'}
-                  onChange={(e) => handleSortChange('status', e.target.value)}
+                  onClick={(e) => handleSortChange('status', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">A-Z</span>
@@ -214,7 +224,7 @@ const BillingSortDropdown = ({ isOpen, onClose, onApplySort, currentSort }) => {
                   name="status"
                   value="z-a"
                   checked={sortOptions.status === 'z-a'}
-                  onChange={(e) => handleSortChange('status', e.target.value)}
+                  onClick={(e) => handleSortChange('status', e.target.value)}
                   className="w-3 h-3 text-purple-600 border-gray-300 focus:ring-purple-500"
                 />
                 <span className="text-xs text-gray-700">Z-A</span>

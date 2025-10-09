@@ -5,6 +5,7 @@ import InputField from "../components/InputField";
 import CustomButton from "../components/CustomButton";
 import TermsConsent from "../components/TermsConsent";
 import { formatPhoneAsUserTypes, formatPhoneForStorage, validatePhilippinePhone } from "../utils/phoneUtils";
+import { fonts } from '../utils/fonts';
 
 export default function RegisterScreen({ navigation }) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: fonts.bold,
     color: '#4a6fa5',
     marginBottom: 8,
     alignSelf: 'flex-start',
@@ -418,13 +419,14 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#9ca3af',
     marginBottom: 16,
     alignSelf: 'flex-start',
     width: '100%',
   },
   noteHighlight: {
-    fontWeight: 'bold',
+    fontFamily: fonts.bold,
     color: '#6b7280',
   },
   formContainer: {
@@ -433,13 +435,14 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: '#374151',
     marginBottom: 8,
     marginTop: 16,
   },
   passwordHint: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#6b7280',
     marginBottom: 8,
     fontStyle: 'italic',

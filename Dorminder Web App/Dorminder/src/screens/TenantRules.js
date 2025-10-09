@@ -13,42 +13,31 @@ import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import { authService } from '../services/auth';
 import { rulesService } from '../services/rulesService';
-import { tenantDataService } from '../services/tenantDataService';
+import { fonts } from '../utils/fonts';
+import { useTenantData } from '../hooks/useTenantData';
+import { handleTabNavigation, handleNotificationPress, handleProfilePress, handleMenuPress } from '../utils/navigation';
+import { commonStyles } from '../styles/commonStyles';
 
 const TenantRules = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('rules');
   const [rules, setRules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [tenantData, setTenantData] = useState(null);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesError, setRulesError] = useState('');
   
-  // Get current user
-  const currentUser = authService.getCurrentUser();
-  const userName = tenantData?.firstName || 'Tenant';
+  // Use custom hook for tenant data
+  const { tenantData, loading, error, userName } = useTenantData();
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'dashboard') {
-      navigation.navigate('TenantDashboard');
-    } else if (tabId === 'news') {
-      navigation.navigate('NewsScreen');
-    } else if (tabId === 'request') {
-      navigation.navigate('TenantRequests');
-    } else if (tabId === 'payment') {
-      navigation.navigate('TenantPayment');
-    }
-    // For other tabs, show placeholder content within this screen
-    // In the future, these can be separate screens
+    handleTabNavigation(navigation, tabId, 'TenantRules');
   };
 
-  const handleNotificationPress = () => {
-    console.log('Notification pressed');
-    // Add your notification logic here
+  const handleNotificationPressWrapper = () => {
+    handleNotificationPress();
   };
 
-  const handleProfilePress = () => {
-    console.log('Profile pressed');
-    // Add your profile logic here
+  const handleProfilePressWrapper = () => {
+    handleProfilePress(navigation);
   };
 
   const handleMenuPress = () => {
@@ -288,13 +277,14 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: '#E53E3E', // Reddish-orange color from image
     marginBottom: 12,
     textAlign: 'left',
   },
   introduction: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#6b7280',
     lineHeight: 24,
     marginBottom: 30,
@@ -315,7 +305,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: '#E53E3E', // Reddish-orange color from image
     flex: 1,
   },
@@ -329,13 +319,14 @@ const styles = StyleSheet.create({
   },
   ruleNumber: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: '#1f2937',
     marginRight: 8,
     minWidth: 20,
   },
   ruleText: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#1f2937',
     lineHeight: 24,
     flex: 1,
@@ -355,11 +346,12 @@ const styles = StyleSheet.create({
   },
   noteTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: '#E53E3E', // Reddish-orange color from image
   },
   noteText: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#1f2937',
     lineHeight: 24,
     fontStyle: 'italic',

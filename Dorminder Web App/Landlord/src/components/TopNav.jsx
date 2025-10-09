@@ -5,7 +5,7 @@ import icNotification from '../assets/icons/ic_notification.png';
 const TopNav = ({ title = "" }) => {
   const { profileImage, userName } = useProfile();
   return (
-    <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200 px-4 py-6">
+    <div className="fixed left-64 top-0 right-0 z-40 bg-white shadow-sm border-b border-gray-200 px-8 py-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
         <div className="flex items-center mx-4">

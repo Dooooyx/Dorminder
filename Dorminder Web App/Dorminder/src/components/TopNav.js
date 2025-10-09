@@ -12,7 +12,7 @@ const TopNav = ({ userName, onNotificationPress, onProfilePress, onMenuPress }) 
         />
       </View>
       <View style={styles.right}>
-        <TouchableOpacity onPress={onNotificationPress} style={styles.iconButton}>
+        <TouchableOpacity onPress={onNotificationPress} style={styles.notificationButton}>
           <Image 
             source={require('../assets/icons/ic_notification.png')}
             style={styles.notificationIcon}
@@ -20,21 +20,22 @@ const TopNav = ({ userName, onNotificationPress, onProfilePress, onMenuPress }) 
           />
         </TouchableOpacity>
         
-        {/* TODO: Replace with user profile avatar icon PNG */}
-        <TouchableOpacity onPress={onProfilePress} style={styles.profileButton}>
-          <View style={styles.profileImage}>
-            <Text style={styles.profileInitial}>{userName?.charAt(0) || 'U'}</Text>
-          </View>
-        </TouchableOpacity>
-        
-        {/* TODO: Replace with hamburger menu icon PNG */}
-        <TouchableOpacity onPress={onMenuPress} style={styles.iconButton}>
-        <Image 
-            source={require('../assets/icons/ic_burgerNav.png')} // Replace with your actual path
-            style={styles.menuIcon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {/* Grouped Profile and Menu with oblong border */}
+        <View style={styles.profileMenuGroup}>
+          <TouchableOpacity onPress={onProfilePress} style={styles.profileButton}>
+            <View style={styles.profileImage}>
+              <Text style={styles.profileInitial}>{userName?.charAt(0) || 'U'}</Text>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
+            <Image 
+              source={require('../assets/icons/ic_burgerNav.png')}
+              style={styles.menuIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -64,13 +65,24 @@ const styles = StyleSheet.create({
       height: 40,
       marginLeft: 4
     },
-    iconButton: { 
+    notificationButton: { 
       padding: 4, 
       marginHorizontal: 2,
-      width: 32,  // Reduced size for tighter spacing
-      height: 32, // Reduced size for tighter spacing
+      width: 32,
+      height: 32,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      // No border radius for notification
+    },
+    profileMenuGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: '#D6DEE3',
+      borderRadius: 25,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      marginLeft: 4,
     },
     menuIcon: {
       width: 24,
@@ -89,10 +101,18 @@ const styles = StyleSheet.create({
     },
     profileButton: { 
       padding: 2,
-      width: 32,  // Reduced size to match iconButton
-      height: 32, // Reduced size to match iconButton
+      width: 32,
+      height: 32,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      marginRight: 4,
+    },
+    menuButton: { 
+      padding: 2,
+      width: 32,
+      height: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     profileImage: {
       width: 24,

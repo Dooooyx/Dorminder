@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '../context/ProfileContext';
 import { useAuth } from '../context/AuthContext';
+import { fileUploadService } from '../services/fileUploadService';
 
 const PersonalInfo = () => {
   const { profileImage, userName, userData, updateProfileImage, updateUserName, refreshUserData } = useProfile();
@@ -32,6 +33,8 @@ const PersonalInfo = () => {
   }, [userData, user]);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,35 +44,86 @@ const PersonalInfo = () => {
     }));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageData = e.target.result;
-        setFormData(prev => ({
-          ...prev,
-          profileImage: imageData
-        }));
-        updateProfileImage(imageData);
-      };
-      reader.readAsDataURL(file);
+      // Validate file
+      const validation = fileUploadService.validateFile(file);
+      if (!validation.isValid) {
+        alert(`Invalid file: ${validation.errors.join(', ')}`);
+        return;
+      }
+
+      setIsUploading(true);
+      
+      try {
+        // Show preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageData = e.target.result;
+          setFormData(prev => ({
+            ...prev,
+            profileImage: imageData
+          }));
+          updateProfileImage(imageData);
+        };
+        reader.readAsDataURL(file);
+        
+        // Store file for upload when save is clicked
+        setUploadedFile(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('Error processing image. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleSave = async () => {
     try {
+      setIsUploading(true);
+      let profileImageUrl = formData.profileImage;
+      
+      // Upload profile picture if a new file was selected
+      if (uploadedFile) {
+        console.log('Uploading profile picture...');
+        const uploadResult = await fileUploadService.uploadProfileImage(uploadedFile, user.uid);
+        
+        if (uploadResult.success) {
+          profileImageUrl = uploadResult.downloadURL;
+          console.log('Profile picture uploaded successfully:', profileImageUrl);
+        } else {
+          console.error('Error uploading profile picture:', uploadResult.error);
+          alert('Error uploading profile picture. Please try again.');
+          setIsUploading(false);
+          return;
+        }
+      }
+
       // Update user profile in Firestore
       const { authService } = await import('../services/auth');
-      const result = await authService.updateUserProfile(user.uid, {
+      const profileData = {
         firstName: formData.firstName,
         middleInitial: formData.middleInitial,
         lastName: formData.lastName,
         phone: formData.phoneNumber,
         birthdate: formData.birthdate
-      });
+      };
+
+      // Add profile image URL if it was uploaded or if it's already a URL (not base64)
+      if (profileImageUrl && !profileImageUrl.startsWith('data:')) {
+        profileData.profileImageUrl = profileImageUrl;
+      }
+
+      const result = await authService.updateUserProfile(user.uid, profileData);
 
       if (result.success) {
+        // Update profile image in context if it was uploaded
+        if (profileImageUrl && !profileImageUrl.startsWith('data:')) {
+          updateProfileImage(profileImageUrl);
+        }
+        
         // Small delay to ensure Firestore update has propagated
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -77,14 +131,18 @@ const PersonalInfo = () => {
         const refreshResult = await refreshUserData();
         if (refreshResult.success) {
           setIsEditing(false);
-          console.log('Personal info saved and refreshed successfully');
+          setUploadedFile(null); // Clear uploaded file
+          console.log('Personal info and profile picture saved successfully');
+          alert('Profile updated successfully!');
         } else {
           // Fallback: manually update the display name
           const middleName = formData.middleInitial ? ` ${formData.middleInitial}.` : '';
           const fullName = `${formData.firstName}${middleName} ${formData.lastName}`.trim();
           updateUserName(fullName);
           setIsEditing(false);
+          setUploadedFile(null); // Clear uploaded file
           console.log('Personal info saved successfully (manual update)');
+          alert('Profile updated successfully!');
         }
       } else {
         console.error('Error saving personal info:', result.error);
@@ -93,6 +151,8 @@ const PersonalInfo = () => {
     } catch (error) {
       console.error('Error saving personal info:', error);
       alert('Error saving personal info. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -110,6 +170,7 @@ const PersonalInfo = () => {
         profileImage: profileImage
       });
     }
+    setUploadedFile(null); // Clear uploaded file
     setIsEditing(false);
   };
 
@@ -129,9 +190,17 @@ const PersonalInfo = () => {
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            disabled={isUploading}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
-            Save
+            {isUploading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <span>Save</span>
+            )}
           </button>
         </div>
       </div>
@@ -162,13 +231,14 @@ const PersonalInfo = () => {
                 id="profileImage"
                 accept="image/*"
                 onChange={handleImageUpload}
+                disabled={isUploading}
                 className="hidden"
               />
               <label
                 htmlFor="profileImage"
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors inline-block"
+                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors inline-block ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Upload Image
+                {isUploading ? 'Processing...' : 'Upload Image'}
               </label>
             </div>
           </div>

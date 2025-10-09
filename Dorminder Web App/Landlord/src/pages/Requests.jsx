@@ -54,21 +54,21 @@ const Requests = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Main Sidebar Navigation */}
       <SideNav />
       
+      {/* Top Bar */}
+      <TopNav title="Requests" />
+      
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-        {/* Top Bar - spans across sub-nav and request cards */}
-        <TopNav title="Requests" />
-        
+      <div className="ml-64 pt-20 min-h-screen flex" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Sub-nav and Content Container */}
         <div className="flex-1 flex overflow-hidden">
           {/* Request Sub-Navigation Sidebar */}
           <div className="w-56 bg-white shadow-sm flex flex-col">
             {/* Navigation items */}
-            <div className="px-3 py-4">
+            <div className="px-3 py-8 mt-2">
               <div className="space-y-1">
                 {tabs.map((tab) => (
                   <button
@@ -100,6 +100,7 @@ const Requests = () => {
               </div>
             </div>
           </div>
+
           
           {/* Request Cards Area */}
           <div className="flex-1 p-8 overflow-y-auto">
@@ -118,3 +119,4 @@ const Requests = () => {
 };
 
 export default Requests;
+

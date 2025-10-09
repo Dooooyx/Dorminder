@@ -23,14 +23,15 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Main Sidebar Navigation */}
       <SideNav />
       
+      {/* Top Bar */}
+      <TopNav title="Settings" />
+      
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-        {/* Top Bar - spans across sub-nav and content */}
-        <TopNav title="Settings" />
+      <div className="ml-64 pt-20 min-h-screen flex" style={{ backgroundColor: '#F0F5FA' }}>
         
         {/* Sub-nav and Content Container */}
         <div className="flex-1 flex overflow-hidden">
@@ -51,6 +52,7 @@ const Settings = () => {
 };
 
 export default Settings;
+
 
 
 

@@ -3,7 +3,6 @@ import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import GenerateBillModal from '../components/GenerateBillModal';
 import PaymentProcessingModal from '../components/PaymentProcessingModal';
-import MonthlyRentResetModal from '../components/MonthlyRentResetModal';
 import BillingActionMenu from '../components/BillingActionMenu';
 import BillingFilterDropdown from '../components/BillingFilterDropdown';
 import BillingSortDropdown from '../components/BillingSortDropdown';
@@ -11,16 +10,16 @@ import { useAuth } from '../context/AuthContext';
 import { billingService } from '../services/billingService';
 import icSort from '../assets/icons/ic_sort.png';
 import icFilter from '../assets/icons/ic_filter.png';
+import icPayment from '../assets/icons/ic_payment.png';
 
 const Billings = () => {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(7);
   const [isGenerateBillModalOpen, setIsGenerateBillModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isMonthlyRentResetModalOpen, setIsMonthlyRentResetModalOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
@@ -251,11 +250,6 @@ const Billings = () => {
     loadBills();
   };
 
-  const handleMonthlyRentReset = () => {
-    // Reload bills to get the latest data from database
-    loadBills();
-    setIsMonthlyRentResetModalOpen(false);
-  };
 
   const handleProcessPayment = (bill) => {
     setSelectedBill(bill);
@@ -288,7 +282,7 @@ const Billings = () => {
   };
 
        const getStatusButton = (status) => {
-         const baseClasses = "inline-flex items-center justify-center px-3 py-1 text-xs font-medium min-w-[70px] h-6 text-white";
+         const baseClasses = "inline-flex items-center justify-center px-3 py-1 text-base font-medium min-w-[70px] h-6 text-white";
          switch (status) {
            case 'Paid':
              return <span className={baseClasses} style={{ borderRadius: '5px', backgroundColor: '#61BD45' }}>Paid</span>;
@@ -311,7 +305,7 @@ const Billings = () => {
       <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
         <SideNav />
         <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-          <TopNav title="Billings" />
+          <TopNav title="" />
           <div className="flex-1 overflow-y-auto p-8">
             <div className="flex justify-center items-center h-64">
               <div className="text-gray-500">Loading billings...</div>
@@ -323,45 +317,52 @@ const Billings = () => {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Newsreader, serif' }}>
+      {/* Sidebar Navigation */}
       <SideNav />
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-        <TopNav title="Billings" />
-        
+      
+      {/* Top Bar */}
+      <TopNav title="Billings" />
+      
+      {/* Main Content Area */}
+      <div className="ml-64 pt-20 min-h-screen" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Main Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="p-8">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Billings</h1>
-            <p className="text-gray-600">Manage tenant dues</p>
+          <div className="mb-6 mt-6">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">Billings</h2>
+            <p className="text-gray-600 ">Manage tenant dues</p>
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Q Search..."
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
-                        setIsFilterDropdownOpen(!isFilterDropdownOpen);
-                        setIsSortDropdownOpen(false); // Close sort when opening filter
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      title="Filter bills"
-                    >
-                      <img src={icFilter} alt="Filter" className="w-4 h-4" />
-                    </button>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <div className="flex items-center space-x-1">
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setIsFilterDropdownOpen(!isFilterDropdownOpen);
+                            setIsSortDropdownOpen(false); // Close sort when opening filter
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          title="Filter bills"
+                        >
+                          <img src={icFilter} alt="Filter" className="w-4 h-4" />
+                        </button>
                     <BillingFilterDropdown
                       isOpen={isFilterDropdownOpen}
                       onClose={() => setIsFilterDropdownOpen(false)}
@@ -369,106 +370,65 @@ const Billings = () => {
                       currentFilters={filters}
                     />
                   </div>
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
-                        setIsSortDropdownOpen(!isSortDropdownOpen);
-                        setIsFilterDropdownOpen(false); // Close filter when opening sort
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      title="Sort bills"
-                    >
-                      <img src={icSort} alt="Sort" className="w-4 h-4" />
-                    </button>
-                    <BillingSortDropdown
-                      isOpen={isSortDropdownOpen}
-                      onClose={() => setIsSortDropdownOpen(false)}
-                      onApplySort={handleApplySort}
-                      currentSort={sortOptions}
-                    />
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setIsSortDropdownOpen(!isSortDropdownOpen);
+                            setIsFilterDropdownOpen(false); // Close filter when opening sort
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          title="Sort bills"
+                        >
+                          <img src={icSort} alt="Sort" className="w-4 h-4" />
+                        </button>
+                        <BillingSortDropdown
+                          isOpen={isSortDropdownOpen}
+                          onClose={() => setIsSortDropdownOpen(false)}
+                          onApplySort={handleApplySort}
+                          currentSort={sortOptions}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
               </div>
-            <div className="flex space-x-3">
-              <button 
-                onClick={() => setIsMonthlyRentResetModalOpen(true)}
-                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#FF6B35' }}
-              >
-                🔄 Monthly Reset
-              </button>
-              <button 
-                onClick={() => setIsGenerateBillModalOpen(true)}
-                className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#40526A' }}
-              >
-                + Generate New Bill
-              </button>
-            </div>
+              <div className="flex space-x-3">
+                <button 
+                  onClick={() => setIsGenerateBillModalOpen(true)}
+                  className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: '#40526A' }}
+                >
+                  + Generate New Bill
+                </button>
+              </div>
             </div>
           </div>
 
-               {/* Billings Table */}
+               {/* Desktop Table View */}
                <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-[600px]">
                  <div className="overflow-x-auto flex-1">
                    <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-white">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Room #</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Room #
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Tenant</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tenant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Billing Period</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Billing Period
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Total Due</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Due
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Due Date</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Status</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <span>Actions</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </div>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -494,35 +454,33 @@ const Billings = () => {
                 ) : (
                   currentBillings.map((bill) => (
                   <tr key={bill.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg font-medium text-gray-900">
                       Room {bill.roomNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-900">
                       {bill.tenantName || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-900">
                       {bill.billingPeriod}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-900">
                       {formatCurrency(bill.totalAmount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-900">
                       {bill.dueDate ? new Date(bill.dueDate.seconds ? bill.dueDate.seconds * 1000 : bill.dueDate).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusButton(bill.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-lg font-medium">
                       <div className="flex items-center space-x-2">
                         {bill.status !== 'Paid' && (
                           <button 
                             onClick={() => handleProcessPayment(bill)}
-                            className="text-green-600 hover:text-green-800 transition-colors"
+                            className="text-green-600 hover:text-green-800 transition-all duration-200 hover:scale-110"
                             title="Process Payment"
                           >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
+                            <img src={icPayment} alt="Process Payment" className="h-6 w-6" />
                           </button>
                         )}
                         <BillingActionMenu 
@@ -539,25 +497,9 @@ const Billings = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 flex-shrink-0">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          {/* Pagination - Inside table */}
+          <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200 flex-shrink-0">
+            <div className="flex-1 flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-700">
                   Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
@@ -595,7 +537,7 @@ const Billings = () => {
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
                         aria-current={currentPage === pageNum ? 'page' : undefined}
-                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                           currentPage === pageNum ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
                         }`}
                       >
@@ -611,7 +553,7 @@ const Billings = () => {
                   {totalPages > 5 && currentPage < totalPages - 2 && (
                     <button
                       onClick={() => handlePageChange(totalPages)}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         currentPage === totalPages ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
@@ -636,6 +578,7 @@ const Billings = () => {
         </div>
       </div>
 
+
       {/* Generate Bill Modal */}
       <GenerateBillModal
         isOpen={isGenerateBillModalOpen}
@@ -651,12 +594,6 @@ const Billings = () => {
         onPaymentProcessed={handlePaymentProcessed}
       />
 
-      {/* Monthly Rent Reset Modal */}
-      <MonthlyRentResetModal
-        isOpen={isMonthlyRentResetModalOpen}
-        onClose={() => setIsMonthlyRentResetModalOpen(false)}
-        onResetComplete={handleMonthlyRentReset}
-      />
 
     </div>
   );

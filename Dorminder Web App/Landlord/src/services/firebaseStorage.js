@@ -67,7 +67,7 @@ export async function uploadTenantValidId(file, tenantId) {
 export async function uploadProfileImage(file, userId) {
   const timestamp = Date.now();
   const extension = file.name.split('.').pop() || 'jpg';
-  const path = `users/${userId}/profile_${timestamp}.${extension}`;
+  const path = `profile-images/${userId}/profile_${timestamp}.${extension}`;
   return await uploadFile(path, file);
 }
 

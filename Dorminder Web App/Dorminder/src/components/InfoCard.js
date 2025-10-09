@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { fonts } from '../utils/fonts';
 
 const InfoCard = ({
   title,
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
     marginBottom: 10,
   },
   section: {
@@ -70,16 +71,18 @@ const styles = StyleSheet.create({
   itemLabel: {
     color: '#E2ECF6',
     fontSize: 14, // smaller subtitle
+    fontFamily: fonts.regular,
   },
   itemDate: {
     color: '#D1E3F8',
     fontSize: 12, // muted small
+    fontFamily: fonts.regular,
     marginTop: 2,
   },
   itemValue: {
     color: '#fff',
     fontSize: 22, // larger amount
-    fontWeight: '800',
+    fontFamily: fonts.bold,
     marginTop: 4,
   },
   ctaButton: {

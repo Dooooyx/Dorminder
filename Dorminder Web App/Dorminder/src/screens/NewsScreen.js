@@ -9,21 +9,16 @@ import {
   Image,
 } from 'react-native';
 import BotNav from '../components/BotNav';
+import { fonts } from '../utils/fonts';
+import { handleTabNavigation } from '../utils/navigation';
+import { commonStyles } from '../styles/commonStyles';
 
 const NewsScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('news');
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'dashboard') {
-      navigation.navigate('TenantDashboard');
-    } else if (tabId === 'rules') {
-      navigation.navigate('TenantRules');
-    } else if (tabId === 'request') {
-      navigation.navigate('TenantRequests');
-    } else if (tabId === 'payment') {
-      navigation.navigate('TenantPayment');
-    }
+    handleTabNavigation(navigation, tabId, 'NewsScreen');
   };
 
   const newsItems = [
@@ -147,13 +142,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 35,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: '#3D5A80',
     marginBottom: 8,
     textAlign: 'left',
   },
   subtitle: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#6B7280',
     textAlign: 'left',
     lineHeight: 20,
@@ -168,6 +164,8 @@ const styles = StyleSheet.create({
   newsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EBEEF3',
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
@@ -196,8 +194,8 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
+    fontFamily: fonts.medium,
     color: '#6B7280',
-    fontWeight: '500',
   },
   statusTag: {
     paddingHorizontal: 8,
@@ -207,31 +205,32 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
+    fontFamily: fonts.semiBold,
     color: '#FFFFFF',
-    fontWeight: '600',
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: '#1F2937',
     marginBottom: 8,
   },
   schedule: {
     fontSize: 14,
+    fontFamily: fonts.medium,
     color: '#6B7280',
     marginBottom: 12,
-    fontWeight: '500',
   },
   description: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#374151',
     lineHeight: 20,
     marginBottom: 12,
   },
   postedBy: {
     fontSize: 12,
+    fontFamily: fonts.medium,
     color: '#9CA3AF',
-    fontWeight: '500',
   },
 });
 

@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicat
 import InputField from "../components/InputField";
 import CustomButton from "../components/CustomButton";
 import { authService } from "../services/auth";
+import { fonts } from "../utils/fonts";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -169,13 +170,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: fonts.bold,
     marginBottom: 6,
     color: "#1f2937",
     alignSelf: "stretch",
   },
   InputLabel: {
     fontSize: 16,
+    fontFamily: fonts.medium,
     marginBottom: 6,
     color: "#1f2937",
     alignSelf: "stretch",
@@ -190,11 +192,13 @@ const styles = StyleSheet.create({
   linkAccent: {
     color: "#EE6C4D",
     fontSize: 12,
+    fontFamily: fonts.medium,
     textDecorationLine: "underline",
   },
   linkMuted: {
     color: "#6b7280",
     fontSize: 12,
+    fontFamily: fonts.regular,
   },
   errorContainer: {
     backgroundColor: "#FEF2F2",

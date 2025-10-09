@@ -447,41 +447,72 @@ export class TenantService {
     }
   }
 
-  // Delete tenant
-  async deleteTenant(tenantId) {
+  // Update tenant with clearance data
+  async updateTenantClearance(tenantId, clearanceData) {
+    try {
+      const tenantRef = doc(db, 'tenants', tenantId);
+      await updateDoc(tenantRef, {
+        clearance: clearanceData,
+        clearanceStatus: clearanceData.status,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log(`✅ Updated tenant ${tenantId} clearance status to: ${clearanceData.status}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating tenant clearance:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Delete tenant (with optional clearance check)
+  async deleteTenant(tenantId, clearanceData = null) {
     try {
       // Get tenant data to find roomId
       const tenantDoc = await getDoc(doc(db, 'tenants', tenantId));
       if (tenantDoc.exists()) {
         const tenantData = tenantDoc.data();
         
-        // If tenant has a room, set it back to Vacant
-        if (tenantData.roomId) {
-          await roomService.removeTenantFromRoom(tenantData.roomId);
+        // If clearance data is provided, update clearance first
+        if (clearanceData) {
+          await this.updateTenantClearance(tenantId, clearanceData);
+          
+          // If status is "Cleared", proceed with full deletion
+          // If status is "Pending Clearance", just mark as inactive
+          if (clearanceData.status === 'Cleared') {
+            // If tenant has a room, set it back to Vacant
+            if (tenantData.roomId) {
+              await roomService.removeTenantFromRoom(tenantData.roomId);
+            }
+            
+            // Fully delete the tenant document
+            await deleteDoc(doc(db, 'tenants', tenantId));
+            return { success: true, message: 'Tenant successfully removed and cleared' };
+          } else {
+            // Mark as inactive but don't delete
+            await updateDoc(doc(db, 'tenants', tenantId), {
+              status: 'Inactive',
+              inactiveReason: 'Pending Clearance',
+              inactivatedAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+            return { success: true, message: 'Tenant marked as inactive - pending clearance', isPending: true };
+          }
+        } else {
+          // Legacy deletion without clearance (should not be used in new flow)
+          // If tenant has a room, set it back to Vacant
+          if (tenantData.roomId) {
+            await roomService.removeTenantFromRoom(tenantData.roomId);
+          }
+          
+          await deleteDoc(doc(db, 'tenants', tenantId));
+          return { success: true, message: 'Tenant deleted' };
         }
+      } else {
+        return { success: false, error: 'Tenant not found' };
       }
-      
-      await deleteDoc(doc(db, 'tenants', tenantId));
-      return { success: true };
     } catch (error) {
       console.error('Error deleting tenant:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Update tenant payment status
-  async updateTenantPaymentStatus(tenantId, paymentStatus) {
-    try {
-      const tenantRef = doc(db, 'tenants', tenantId);
-      await updateDoc(tenantRef, {
-        paymentStatus: paymentStatus,
-        updatedAt: serverTimestamp()
-      });
-      
-      console.log(`✅ Updated tenant ${tenantId} payment status to: ${paymentStatus}`);
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating tenant payment status:', error);
       return { success: false, error: error.message };
     }
   }

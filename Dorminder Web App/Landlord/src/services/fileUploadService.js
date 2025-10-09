@@ -1,5 +1,5 @@
 // Firebase Storage Upload Service for React.js
-import { uploadFile, uploadTenantValidId, uploadProfileImage, validateFile } from './firebaseStorage.js';
+import { uploadFile, uploadTenantValidId, uploadProfileImage as firebaseUploadProfileImage, validateFile } from './firebaseStorage.js';
 
 export class FileUploadService {
   // Upload file to Firebase Storage
@@ -36,7 +36,24 @@ export class FileUploadService {
 
   // Upload profile image
   async uploadProfileImage(file, userId) {
-    return await uploadProfileImage(file, userId);
+    try {
+      // Validate file first
+      const validation = this.validateFile(file);
+      if (!validation.isValid) {
+        return { success: false, error: validation.errors.join(', ') };
+      }
+
+      // Upload to Firebase Storage
+      const downloadURL = await firebaseUploadProfileImage(file, userId);
+      
+      return {
+        success: true,
+        downloadURL: downloadURL
+      };
+    } catch (error) {
+      console.error('Profile image upload error:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   // Validate file

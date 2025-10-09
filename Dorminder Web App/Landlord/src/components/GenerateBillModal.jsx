@@ -211,7 +211,7 @@ const GenerateBillModal = ({ isOpen, onClose, onGenerateBill }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 pb-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 backdrop-blur-md bg-opacity-30"
@@ -219,7 +219,7 @@ const GenerateBillModal = ({ isOpen, onClose, onGenerateBill }) => {
       ></div>
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[95vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
           <div className="flex justify-between items-center">

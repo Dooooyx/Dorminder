@@ -119,7 +119,7 @@ const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed }) =
   const isFullPayment = parseFloat(paymentData.paymentAmount) >= remainingBalance;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-8">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 backdrop-blur-md bg-opacity-30"
@@ -127,7 +127,7 @@ const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed }) =
       ></div>
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4">
+      <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
           <div className="flex justify-between items-center">
@@ -142,7 +142,7 @@ const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed }) =
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 flex-1 overflow-y-auto">
           {/* Bill Information */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-gray-800 mb-2">Bill Information</h3>

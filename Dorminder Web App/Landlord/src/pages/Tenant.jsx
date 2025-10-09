@@ -4,6 +4,7 @@ import TopNav from '../components/TopNav';
 import AddTenantModal from '../components/AddTenantModal';
 import TenantActionsMenu from '../components/TenantActionsMenu';
 import TenantDetailsModal from '../components/TenantDetailsModal';
+import TenantClearanceModal from '../components/TenantClearanceModal';
 import SortModal from '../components/SortModal';
 import { tenantService } from '../services/tenantService';
 import { roomService } from '../services/roomService';
@@ -16,7 +17,9 @@ const Tenant = () => {
   const [isAddTenantModalOpen, setIsAddTenantModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const [isTenantDetailsModalOpen, setIsTenantDetailsModalOpen] = useState(false);
+  const [isClearanceModalOpen, setIsClearanceModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState(null);
+  const [tenantToRemove, setTenantToRemove] = useState(null);
   const [sortOptions, setSortOptions] = useState({
     name: 'A-Z',
     roomNumber: '',
@@ -26,6 +29,8 @@ const Tenant = () => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   // Show loading while authentication is being checked
   if (authLoading) {
@@ -190,6 +195,22 @@ const Tenant = () => {
     return sortedTenants;
   };
 
+  // Pagination logic
+  const getPaginatedTenants = () => {
+    const sortedTenants = getSortedTenants();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedTenants.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(getSortedTenants().length / itemsPerPage);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const handleApplySort = (newSortOptions) => {
     setSortOptions(newSortOptions);
   };
@@ -241,8 +262,40 @@ const Tenant = () => {
 
   const handleRemoveTenant = (tenant) => {
     console.log('Remove tenant:', tenant);
-    if (window.confirm(`Are you sure you want to remove ${tenant.firstName} ${tenant.lastName}?`)) {
-      setTenants(prev => prev.filter(t => t.id !== tenant.id));
+    setTenantToRemove(tenant);
+    setIsClearanceModalOpen(true);
+  };
+
+  const handleClearanceComplete = async (clearanceData) => {
+    if (!tenantToRemove) return;
+
+    try {
+      const result = await tenantService.deleteTenant(tenantToRemove.id, clearanceData);
+      
+      if (result.success) {
+        if (result.isPending) {
+          // Update tenant in the list with new status
+          setTenants(prev => prev.map(t => 
+            t.id === tenantToRemove.id 
+              ? { ...t, status: 'Inactive', clearanceStatus: clearanceData.status }
+              : t
+          ));
+          alert(result.message || 'Tenant marked as pending clearance');
+        } else {
+          // Remove tenant from the list
+          setTenants(prev => prev.filter(t => t.id !== tenantToRemove.id));
+          alert(result.message || 'Tenant successfully removed');
+        }
+        
+        setIsClearanceModalOpen(false);
+        setTenantToRemove(null);
+        loadTenants(); // Reload to get fresh data
+      } else {
+        alert(result.error || 'Failed to process tenant removal');
+      }
+    } catch (error) {
+      console.error('Error processing tenant removal:', error);
+      alert('Failed to process tenant removal');
     }
   };
 
@@ -286,19 +339,19 @@ const Tenant = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Sidebar Navigation */}
       <SideNav />
       
+      {/* Top Bar */}
+      <TopNav title="Tenants" />
+      
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-        {/* Top Bar */}
-        <TopNav title="" />
-
+      <div className="ml-64 pt-20 min-h-screen" style={{ backgroundColor: '#F0F5FA' }}>
         {/* Main Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="p-8">
           {/* Page Header */}
-          <div className="mb-6">
+          <div className="mb-6 mt-6">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Tenants</h2>
             <p className="text-gray-600">Manage tenant profiles, track leases, and monitor rental status.</p>
           </div>
@@ -421,7 +474,7 @@ const Tenant = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {getSortedTenants().map((tenant) => (
+                  {getPaginatedTenants().map((tenant) => (
                     <tr key={tenant.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -502,45 +555,54 @@ const Tenant = () => {
               </table>
               </div>
 
-              {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 flex-shrink-0">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                  Previous
-                </a>
-                <a href="#" className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                  Next
-                </a>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">1</span> to <span className="font-medium">{getSortedTenants().length}</span> of <span className="font-medium">{getSortedTenants().length}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                      <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </a>
-                    <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">01</a>
-                    <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">02</a>
-                    <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">03</a>
-                    <a href="#" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">04</a>
-                    <a href="#" className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                      <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </a>
-                  </nav>
+              {/* Pagination - Inside table */}
+              <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200 flex-shrink-0">
+                <div className="flex-1 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, getSortedTenants().length)}</span> of <span className="font-medium">{getSortedTenants().length}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {Array.from({ length: getTotalPages() }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === currentPage
+                              ? 'border-gray-300 bg-blue-50 text-blue-600'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page.toString().padStart(2, '0')}
+                        </button>
+                      ))}
+                      <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === getTotalPages()}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Next</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           )}
         </div>
       </div>
@@ -565,6 +627,60 @@ const Tenant = () => {
         onDownloadContract={handleDownloadContract}
         onResetPassword={handleResetPassword}
       />
+
+      {/* Tenant Clearance Modal */}
+      {isClearanceModalOpen && tenantToRemove && (
+        <TenantClearanceModal
+          tenant={tenantToRemove}
+          onClearanceComplete={handleClearanceComplete}
+          onCancel={() => {
+            setIsClearanceModalOpen(false);
+            setTenantToRemove(null);
+          }}
+        />
+      )}
+
+      {/* Sort Modal */}
+      <SortModal 
+        isOpen={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        onApplySort={handleApplySort}
+        onReset={handleReset}
+        currentSort={sortOptions}
+      />
+
+      {/* Add Tenant Modal */}
+      <AddTenantModal 
+        isOpen={isAddTenantModalOpen}
+        onClose={() => setIsAddTenantModalOpen(false)}
+        onAddTenant={handleAddTenant}
+      />
+
+      {/* Tenant Details Modal */}
+      <TenantDetailsModal 
+        isOpen={isTenantDetailsModalOpen}
+        onClose={() => {
+          setIsTenantDetailsModalOpen(false);
+          setSelectedTenant(null);
+        }}
+        tenant={selectedTenant}
+        onEdit={handleEditTenant}
+        onSave={handleSaveTenantDetails}
+        onDownloadContract={handleDownloadContract}
+        onResetPassword={handleResetPassword}
+      />
+
+      {/* Tenant Clearance Modal */}
+      {isClearanceModalOpen && tenantToRemove && (
+        <TenantClearanceModal
+          tenant={tenantToRemove}
+          onClearanceComplete={handleClearanceComplete}
+          onCancel={() => {
+            setIsClearanceModalOpen(false);
+            setTenantToRemove(null);
+          }}
+        />
+      )}
 
       {/* Sort Modal */}
       <SortModal 

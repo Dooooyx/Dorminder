@@ -36,7 +36,10 @@ const SideNav = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 h-screen bg-white shadow-lg flex flex-col sticky top-0" style={{ fontFamily: 'Newsreader, serif' }}>
+    <>
+      
+      {/* Sidebar */}
+      <div className="fixed left-0 top-0 w-64 h-screen bg-white shadow-lg flex flex-col z-50" style={{ fontFamily: 'Newsreader, serif' }}>
       {/* Logo Section */}
       <div className="flex items-center justify-center py-6 border-b border-gray-200">
         <img 
@@ -147,7 +150,8 @@ const SideNav = () => {
           ))}
         </ul>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

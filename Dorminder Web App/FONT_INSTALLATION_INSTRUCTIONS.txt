@@ -1,0 +1,624 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                  📝 NEWSREADER FONT INSTALLATION INSTRUCTIONS                 ║
+║                          For Dorminder Mobile App                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CURRENT STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The app is currently configured but fonts may not be loading correctly.
+Follow these steps to ensure Newsreader font works properly.
+
+
+STEP 1: VERIFY FONT FILES EXIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open Terminal
+2. Navigate to your project:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+3. Check if fonts exist:
+   
+   ls -la assets/fonts/
+
+4. You should see these 4 files:
+   ✓ Newsreader-Regular.ttf
+   ✓ Newsreader-Medium.ttf
+   ✓ Newsreader-SemiBold.ttf
+   ✓ Newsreader-Bold.ttf
+
+
+STEP 2: IF FONTS ARE MISSING, DOWNLOAD THEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A: Download from Google Fonts
+────────────────────────────────────────────────────────────────────────────────
+
+1. Go to: https://fonts.google.com/specimen/Newsreader
+
+2. Click "Download family" button (top right)
+
+3. Extract the ZIP file
+
+4. Copy these 4 files to your project:
+   
+   From: Newsreader/static/
+   
+   Newsreader-Regular.ttf       → Copy to: Dorminder/assets/fonts/
+   Newsreader-Medium.ttf        → Copy to: Dorminder/assets/fonts/
+   Newsreader-SemiBold.ttf      → Copy to: Dorminder/assets/fonts/
+   Newsreader-Bold.ttf          → Copy to: Dorminder/assets/fonts/
+
+
+Option B: Download Using Terminal (Recommended)
+────────────────────────────────────────────────────────────────────────────────
+
+Run these commands in Terminal:
+
+# 1. Navigate to project
+cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+# 2. Create fonts directory if it doesn't exist
+mkdir -p assets/fonts
+
+# 3. Download the fonts (using a font repository or Google Fonts)
+# Note: You'll need to manually download from Google Fonts website
+# as direct download links change frequently
+
+
+STEP 3: INSTALL REQUIRED PACKAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Make sure you're in the Dorminder directory:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+2. Install expo-font package:
+   
+   npx expo install expo-font
+
+3. Verify installation:
+   
+   npm list expo-font
+   
+   Should show: expo-font@~14.0.8
+
+
+STEP 4: VERIFY FILES ARE CONFIGURED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Check these files have the correct code:
+
+File: Dorminder/App.js
+────────────────────────────────────────────────────────────────────────────────
+Should import and use fonts like this:
+
+    import { useFonts } from 'expo-font';
+
+    export default function App() {
+      const [fontsLoaded, fontError] = useFonts({
+        'Newsreader-Regular': require('./assets/fonts/Newsreader-Regular.ttf'),
+        'Newsreader-Bold': require('./assets/fonts/Newsreader-Bold.ttf'),
+        'Newsreader-SemiBold': require('./assets/fonts/Newsreader-SemiBold.ttf'),
+        'Newsreader-Medium': require('./assets/fonts/Newsreader-Medium.ttf'),
+      });
+      
+      // ... rest of code
+    }
+
+
+File: Dorminder/app.json
+────────────────────────────────────────────────────────────────────────────────
+Should have expo-font plugin:
+
+    {
+      "expo": {
+        ...
+        "plugins": [
+          "expo-font"
+        ]
+      }
+    }
+
+
+File: Dorminder/src/utils/fonts.js
+────────────────────────────────────────────────────────────────────────────────
+Should export font names:
+
+    export const fonts = {
+      regular: 'Newsreader-Regular',
+      medium: 'Newsreader-Medium',
+      semiBold: 'Newsreader-SemiBold',
+      bold: 'Newsreader-Bold',
+      // ... rest of code
+    };
+
+
+STEP 5: CLEAR CACHE AND RESTART
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Stop the current Expo server (if running):
+   Press Ctrl+C in Terminal
+
+2. Clear Metro bundler cache:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo start --clear
+
+3. Or use these commands separately:
+   
+   # Clear npm cache
+   npm cache clean --force
+   
+   # Clear watchman cache (if installed)
+   watchman watch-del-all
+   
+   # Clear Expo cache
+   npx expo start -c
+
+
+STEP 6: REBUILD THE APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For iOS (if testing on iOS):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo run:ios
+
+
+For Android (if testing on Android):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo run:android
+
+
+For Expo Go (Development):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo start --clear
+   
+   Then:
+   - Scan QR code with Expo Go app
+   - Shake device → Reload
+   - Wait 3 seconds for fonts to load
+
+
+STEP 7: VERIFY FONTS ARE WORKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Check Terminal for font errors:
+   ✓ Should NOT see: "CTFontManagerError code: 104"
+   ✓ Should NOT see: "Font registration unsuccessful"
+   ✓ May see: "Fonts taking too long to load" (if fonts missing)
+
+2. Check the app visually:
+   ✓ Text should appear in serif font (Newsreader)
+   ✓ NOT in default system sans-serif
+   ✓ Different weights should be visible (bold vs regular)
+
+3. Test screens:
+   ✓ Login Screen - Title should be bold
+   ✓ News Screen - Title should be SemiBold, 35px
+   ✓ Dashboard - Greeting should be bold
+   ✓ All screens should use Newsreader
+
+
+TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: App stuck on "Loading..." screen
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Wait 3 seconds (app will auto-continue with system fonts)
+  - If still stuck, fonts files are missing
+  - Download fonts from Google Fonts (see STEP 2)
+
+
+Problem: "Font registration unsuccessful" error
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Clear cache: npx expo start --clear
+  - Verify font files are .ttf format (not .otf)
+  - Check file names match exactly (case-sensitive)
+
+
+Problem: Fonts work on iOS but not Android (or vice versa)
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Font files must be .ttf (TrueType) not .otf (OpenType)
+  - Download from Google Fonts static folder
+  - Rebuild the app completely
+
+
+Problem: App shows system fonts instead of Newsreader
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Check fonts are in assets/fonts/ directory
+  - Verify font names in App.js match file names
+  - Clear cache and restart: npx expo start -c
+
+
+QUICK REFERENCE: TERMINAL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Navigate to project
+cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+# Check if fonts exist
+ls -la assets/fonts/
+
+# Install expo-font
+npx expo install expo-font
+
+# Clear cache and start
+npx expo start --clear
+
+# Reload in Expo Go
+# Shake device → Press "Reload"
+# Or press 'r' in terminal
+
+
+FILE LOCATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Font Files:
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/assets/fonts/
+  ├── Newsreader-Regular.ttf
+  ├── Newsreader-Medium.ttf
+  ├── Newsreader-SemiBold.ttf
+  └── Newsreader-Bold.ttf
+
+Configuration Files:
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/App.js
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/app.json
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/src/utils/fonts.js
+
+
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  Font file names are case-sensitive!
+⚠️  Must use .ttf files (TrueType), not .otf files
+⚠️  Clear cache after adding/changing fonts
+⚠️  App will use system fonts if Newsreader fails to load (graceful fallback)
+⚠️  3-second timeout prevents infinite loading screen
+
+
+SUCCESS INDICATORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ No font errors in terminal
+✓ App loads in 3 seconds or less
+✓ Text appears in serif font (Newsreader)
+✓ Bold/SemiBold/Medium/Regular weights visible
+✓ Consistent typography across all screens
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                    🎉 FONT INSTALLATION COMPLETE!
+═══════════════════════════════════════════════════════════════════════════════
+
+If you've followed all steps and fonts are still not working:
+1. The app will automatically use system fonts (fallback)
+2. The app will still function perfectly
+3. You can try re-downloading fonts from Google Fonts
+4. Clear cache one more time: npx expo start --clear
+
+The app is designed to work with or without Newsreader fonts! ✨
+
+
+║                  📝 NEWSREADER FONT INSTALLATION INSTRUCTIONS                 ║
+║                          For Dorminder Mobile App                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CURRENT STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The app is currently configured but fonts may not be loading correctly.
+Follow these steps to ensure Newsreader font works properly.
+
+
+STEP 1: VERIFY FONT FILES EXIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open Terminal
+2. Navigate to your project:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+3. Check if fonts exist:
+   
+   ls -la assets/fonts/
+
+4. You should see these 4 files:
+   ✓ Newsreader-Regular.ttf
+   ✓ Newsreader-Medium.ttf
+   ✓ Newsreader-SemiBold.ttf
+   ✓ Newsreader-Bold.ttf
+
+
+STEP 2: IF FONTS ARE MISSING, DOWNLOAD THEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A: Download from Google Fonts
+────────────────────────────────────────────────────────────────────────────────
+
+1. Go to: https://fonts.google.com/specimen/Newsreader
+
+2. Click "Download family" button (top right)
+
+3. Extract the ZIP file
+
+4. Copy these 4 files to your project:
+   
+   From: Newsreader/static/
+   
+   Newsreader-Regular.ttf       → Copy to: Dorminder/assets/fonts/
+   Newsreader-Medium.ttf        → Copy to: Dorminder/assets/fonts/
+   Newsreader-SemiBold.ttf      → Copy to: Dorminder/assets/fonts/
+   Newsreader-Bold.ttf          → Copy to: Dorminder/assets/fonts/
+
+
+Option B: Download Using Terminal (Recommended)
+────────────────────────────────────────────────────────────────────────────────
+
+Run these commands in Terminal:
+
+# 1. Navigate to project
+cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+# 2. Create fonts directory if it doesn't exist
+mkdir -p assets/fonts
+
+# 3. Download the fonts (using a font repository or Google Fonts)
+# Note: You'll need to manually download from Google Fonts website
+# as direct download links change frequently
+
+
+STEP 3: INSTALL REQUIRED PACKAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Make sure you're in the Dorminder directory:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+2. Install expo-font package:
+   
+   npx expo install expo-font
+
+3. Verify installation:
+   
+   npm list expo-font
+   
+   Should show: expo-font@~14.0.8
+
+
+STEP 4: VERIFY FILES ARE CONFIGURED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Check these files have the correct code:
+
+File: Dorminder/App.js
+────────────────────────────────────────────────────────────────────────────────
+Should import and use fonts like this:
+
+    import { useFonts } from 'expo-font';
+
+    export default function App() {
+      const [fontsLoaded, fontError] = useFonts({
+        'Newsreader-Regular': require('./assets/fonts/Newsreader-Regular.ttf'),
+        'Newsreader-Bold': require('./assets/fonts/Newsreader-Bold.ttf'),
+        'Newsreader-SemiBold': require('./assets/fonts/Newsreader-SemiBold.ttf'),
+        'Newsreader-Medium': require('./assets/fonts/Newsreader-Medium.ttf'),
+      });
+      
+      // ... rest of code
+    }
+
+
+File: Dorminder/app.json
+────────────────────────────────────────────────────────────────────────────────
+Should have expo-font plugin:
+
+    {
+      "expo": {
+        ...
+        "plugins": [
+          "expo-font"
+        ]
+      }
+    }
+
+
+File: Dorminder/src/utils/fonts.js
+────────────────────────────────────────────────────────────────────────────────
+Should export font names:
+
+    export const fonts = {
+      regular: 'Newsreader-Regular',
+      medium: 'Newsreader-Medium',
+      semiBold: 'Newsreader-SemiBold',
+      bold: 'Newsreader-Bold',
+      // ... rest of code
+    };
+
+
+STEP 5: CLEAR CACHE AND RESTART
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Stop the current Expo server (if running):
+   Press Ctrl+C in Terminal
+
+2. Clear Metro bundler cache:
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo start --clear
+
+3. Or use these commands separately:
+   
+   # Clear npm cache
+   npm cache clean --force
+   
+   # Clear watchman cache (if installed)
+   watchman watch-del-all
+   
+   # Clear Expo cache
+   npx expo start -c
+
+
+STEP 6: REBUILD THE APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For iOS (if testing on iOS):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo run:ios
+
+
+For Android (if testing on Android):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo run:android
+
+
+For Expo Go (Development):
+────────────────────────────────────────────────────────────────────────────────
+   
+   cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+   npx expo start --clear
+   
+   Then:
+   - Scan QR code with Expo Go app
+   - Shake device → Reload
+   - Wait 3 seconds for fonts to load
+
+
+STEP 7: VERIFY FONTS ARE WORKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Check Terminal for font errors:
+   ✓ Should NOT see: "CTFontManagerError code: 104"
+   ✓ Should NOT see: "Font registration unsuccessful"
+   ✓ May see: "Fonts taking too long to load" (if fonts missing)
+
+2. Check the app visually:
+   ✓ Text should appear in serif font (Newsreader)
+   ✓ NOT in default system sans-serif
+   ✓ Different weights should be visible (bold vs regular)
+
+3. Test screens:
+   ✓ Login Screen - Title should be bold
+   ✓ News Screen - Title should be SemiBold, 35px
+   ✓ Dashboard - Greeting should be bold
+   ✓ All screens should use Newsreader
+
+
+TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: App stuck on "Loading..." screen
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Wait 3 seconds (app will auto-continue with system fonts)
+  - If still stuck, fonts files are missing
+  - Download fonts from Google Fonts (see STEP 2)
+
+
+Problem: "Font registration unsuccessful" error
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Clear cache: npx expo start --clear
+  - Verify font files are .ttf format (not .otf)
+  - Check file names match exactly (case-sensitive)
+
+
+Problem: Fonts work on iOS but not Android (or vice versa)
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Font files must be .ttf (TrueType) not .otf (OpenType)
+  - Download from Google Fonts static folder
+  - Rebuild the app completely
+
+
+Problem: App shows system fonts instead of Newsreader
+────────────────────────────────────────────────────────────────────────────────
+Solution:
+  - Check fonts are in assets/fonts/ directory
+  - Verify font names in App.js match file names
+  - Clear cache and restart: npx expo start -c
+
+
+QUICK REFERENCE: TERMINAL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Navigate to project
+cd "/Users/danallenpantinople/Dorminder Web App/Dorminder"
+
+# Check if fonts exist
+ls -la assets/fonts/
+
+# Install expo-font
+npx expo install expo-font
+
+# Clear cache and start
+npx expo start --clear
+
+# Reload in Expo Go
+# Shake device → Press "Reload"
+# Or press 'r' in terminal
+
+
+FILE LOCATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Font Files:
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/assets/fonts/
+  ├── Newsreader-Regular.ttf
+  ├── Newsreader-Medium.ttf
+  ├── Newsreader-SemiBold.ttf
+  └── Newsreader-Bold.ttf
+
+Configuration Files:
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/App.js
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/app.json
+  /Users/danallenpantinople/Dorminder Web App/Dorminder/src/utils/fonts.js
+
+
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  Font file names are case-sensitive!
+⚠️  Must use .ttf files (TrueType), not .otf files
+⚠️  Clear cache after adding/changing fonts
+⚠️  App will use system fonts if Newsreader fails to load (graceful fallback)
+⚠️  3-second timeout prevents infinite loading screen
+
+
+SUCCESS INDICATORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ No font errors in terminal
+✓ App loads in 3 seconds or less
+✓ Text appears in serif font (Newsreader)
+✓ Bold/SemiBold/Medium/Regular weights visible
+✓ Consistent typography across all screens
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                    🎉 FONT INSTALLATION COMPLETE!
+═══════════════════════════════════════════════════════════════════════════════
+
+If you've followed all steps and fonts are still not working:
+1. The app will automatically use system fonts (fallback)
+2. The app will still function perfectly
+3. You can try re-downloading fonts from Google Fonts
+4. Clear cache one more time: npx expo start --clear
+
+The app is designed to work with or without Newsreader fonts! ✨
+
+
+

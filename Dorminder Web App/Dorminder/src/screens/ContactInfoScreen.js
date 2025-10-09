@@ -13,6 +13,7 @@ import {
 import BotNav from '../components/BotNav';
 import { tenantDataService } from '../services/tenantDataService';
 import { authService } from '../services/auth';
+import { fonts } from '../utils/fonts';
 
 const ContactInfoScreen = ({ navigation }) => {
   const [landlordInfo, setLandlordInfo] = useState(null);
@@ -312,12 +313,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
     color: '#1A202C',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#718096',
     marginBottom: 32,
     lineHeight: 24,

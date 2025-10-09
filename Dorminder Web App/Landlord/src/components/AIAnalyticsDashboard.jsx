@@ -127,7 +127,7 @@ const AIAnalyticsDashboard = () => {
               {forecast?.aiEnhanced ? ' + GROQ' : ' (Local Algorithms)'}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <span className="text-sm text-gray-500">
               Last updated: {new Date().toLocaleTimeString()}
             </span>
@@ -140,42 +140,27 @@ const AIAnalyticsDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-                    <button
-                      onClick={async () => {
-                        const result = await aiAnalyticsService.testGROQConnection();
-                        if (result.success) {
-                          alert(`✅ GROQ API is working!\n\nModel: ${result.model}\nResponse: ${JSON.stringify(result.response, null, 2)}`);
-                        } else {
-                          alert(`❌ GROQ API Error: ${result.error}\n\nThis is normal - the system will use enhanced local AI instead.`);
-                        }
-                      }}
-                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Test GROQ API"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 mt-4">
+        <div className="flex space-x-1 mt-4 overflow-x-auto pb-2">
           {[
             { id: 'overview', label: 'Overview', icon: '📊' },
             { id: 'forecast', label: 'Forecast', icon: '🔮' },
-            { id: 'ai-analysis', label: 'AI Analysis', icon: '🤖' }
+            { id: 'ai-analysis', label: 'AI Analysis', icon: '🤖' },
+            { id: 'optimization', label: 'Optimization', icon: '🎯' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
+              <span className="mr-1">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
@@ -325,7 +310,7 @@ const AIAnalyticsDashboard = () => {
             {forecast?.aiEnhanced && forecast?.aiInsights ? (
               <div className="space-y-6">
                 {/* AI Analysis Card */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
                   <div className="flex items-center space-x-2 mb-4">
                     <span className="text-2xl">🤖</span>
                     <h4 className="text-lg font-semibold text-purple-900">GROQ AI Analysis</h4>
@@ -334,7 +319,7 @@ const AIAnalyticsDashboard = () => {
                     </span>
                   </div>
                   
-                  <div className="bg-white rounded-lg p-6 border border-purple-100 max-h-96 overflow-y-auto">
+                  <div className="bg-white rounded-lg p-4 border border-purple-100 max-h-80 overflow-y-auto">
                     <div className="prose prose-sm max-w-none">
                       <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-sm">
                         {forecast.aiInsights.aiAnalysis}
@@ -417,6 +402,59 @@ const AIAnalyticsDashboard = () => {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Optimization Tab */}
+        {activeTab === 'optimization' && forecast?.optimizationRecommendations && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900">🎯 Optimization Recommendations</h3>
+
+            {forecast.optimizationRecommendations.map((rec, index) => (
+              <div key={index} className="bg-white border border-gray-200 rounded-xl p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      rec.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                      rec.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {rec.priority}
+                    </span>
+                    <span className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded">
+                      {rec.category}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Impact: {rec.impact}</div>
+                    <div className="text-sm text-gray-500">Effort: {rec.effort}</div>
+                  </div>
+                </div>
+
+                <h5 className="font-semibold text-gray-900 mb-2">{rec.title}</h5>
+                <p className="text-gray-700 mb-4">{rec.description}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="text-sm font-medium text-blue-900">Expected Benefit</div>
+                    <div className="text-blue-700 text-sm">{rec.expectedBenefit}</div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="text-sm font-medium text-green-900">Timeframe</div>
+                    <div className="text-green-700 text-sm">{rec.timeframe}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-medium text-gray-900 mb-2">Recommended Actions:</div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {rec.actions.map((action, actionIndex) => (
+                      <li key={actionIndex} className="text-sm text-gray-700">{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

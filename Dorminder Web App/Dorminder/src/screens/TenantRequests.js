@@ -15,6 +15,9 @@ import RequestTabBar from '../components/RequestTabBar';
 import FloatingActionButton from '../components/FloatingActionButton';
 import { authService } from '../services/auth';
 import { requestService } from '../services/requestService';
+import { fonts } from '../utils/fonts';
+import { handleTabNavigation } from '../utils/navigation';
+import { commonStyles } from '../styles/commonStyles';
 
 const { width } = Dimensions.get('window');
 
@@ -39,14 +42,8 @@ const TenantRequests = ({ navigation }) => {
   const handleTabPress = (tabId) => {
     if (tabId === 'ongoing' || tabId === 'completed') {
       setActiveTab(tabId);
-    } else if (tabId === 'dashboard') {
-      navigation.navigate('TenantDashboard');
-    } else if (tabId === 'news') {
-      navigation.navigate('NewsScreen');
-    } else if (tabId === 'rules') {
-      navigation.navigate('TenantRules');
-    } else if (tabId === 'payment') {
-      navigation.navigate('TenantPayment');
+    } else {
+      handleTabNavigation(navigation, tabId, 'TenantRequests');
     }
   };
 
@@ -131,13 +128,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 35,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     color: '#3D5A80',
     marginBottom: 4,
     textAlign: 'left',
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#718096',
     textAlign: 'left',
   },

@@ -30,6 +30,11 @@ export const ProfileProvider = ({ children }) => {
             const data = result.data;
             setUserData(data);
             
+            // Set profile image from user data if available
+            if (data.profileImageUrl) {
+              setProfileImage(data.profileImageUrl);
+            }
+            
             // Set the display name from user data
             const middleName = data.middleInitial ? ` ${data.middleInitial}.` : '';
             const displayName = data.displayName || `${data.firstName}${middleName} ${data.lastName}`.trim() || 'User';
@@ -83,6 +88,11 @@ export const ProfileProvider = ({ children }) => {
         if (result.success) {
           const data = result.data;
           setUserData(data);
+          
+          // Set profile image from user data if available
+          if (data.profileImageUrl) {
+            setProfileImage(data.profileImageUrl);
+          }
           
           // Set the display name from user data
           const middleName = data.middleInitial ? ` ${data.middleInitial}.` : '';

@@ -13,6 +13,7 @@ import {
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import BotNav from '../components/BotNav';
+import { fonts } from '../utils/fonts';
 
 const ChangePasswordScreen = ({ navigation }) => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -307,6 +308,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#718096',
     marginBottom: 32,
     lineHeight: 24,
@@ -366,6 +368,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#E53E3E',
     marginTop: 4,
   },

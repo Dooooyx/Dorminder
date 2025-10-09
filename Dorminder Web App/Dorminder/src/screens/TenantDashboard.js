@@ -15,27 +15,24 @@ import AnnouncementCard from '../components/AnnouncementCard';
 import BurgerNav from '../components/BurgerNav';
 import TenantInfoHeader from '../components/TenantInfoHeader';
 import { authService } from '../services/auth';
-import { tenantDataService } from '../services/tenantDataService';
 import { billingService } from '../services/billingService';
 import BillBreakdownModal from '../components/BillBreakdownModal';
+import { fonts } from '../utils/fonts';
+import { useTenantData } from '../hooks/useTenantData';
+import { handleTabNavigation, handleNotificationPress, handleProfilePress, handleMenuPress } from '../utils/navigation';
+import { commonStyles } from '../styles/commonStyles';
 
 const TenantDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
   const [isBurgerNavVisible, setIsBurgerNavVisible] = React.useState(false);
   
-  // Dynamic data state
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Use custom hook for tenant data
+  const { tenantData, loading, error, userName } = useTenantData();
   
   // Billing state
   const [currentBalance, setCurrentBalance] = useState(0);
   const [bills, setBills] = useState([]);
   const [isBillBreakdownVisible, setIsBillBreakdownVisible] = useState(false);
-  
-  // Get current user
-  const currentUser = authService.getCurrentUser();
-  const userName = dashboardData?.tenant?.firstName || 'Loading...';
 
   // Fetch tenant dashboard data
   useEffect(() => {
@@ -84,32 +81,19 @@ const TenantDashboard = ({ navigation }) => {
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'news') {
-      navigation.navigate('NewsScreen');
-    } else if (tabId === 'rules') {
-      navigation.navigate('TenantRules');
-    } else if (tabId === 'request') {
-      navigation.navigate('TenantRequests');
-    } else if (tabId === 'payment') {
-      navigation.navigate('TenantPayment');
-    }
-    // For other tabs, show placeholder content within this screen
-    // In the future, these can be separate screens
+    handleTabNavigation(navigation, tabId, 'TenantDashboard');
   };
 
-  const handleNotificationPress = () => {
-    console.log('Notification pressed');
-    // Add your notification logic here
+  const handleNotificationPressWrapper = () => {
+    handleNotificationPress();
   };
 
-  const handleProfilePress = () => {
-    console.log('Profile pressed');
-    // Add your profile logic here
+  const handleProfilePressWrapper = () => {
+    handleProfilePress(navigation);
   };
 
-  const handleMenuPress = () => {
-    console.log('Menu pressed');
-    setIsBurgerNavVisible(true);
+  const handleMenuPressWrapper = () => {
+    handleMenuPress(setIsBurgerNavVisible);
   };
 
   const handleViewMore = () => {
@@ -284,12 +268,12 @@ const TenantDashboard = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav
-        userName={userName}
-        onNotificationPress={handleNotificationPress}
-        onProfilePress={handleProfilePress}
-        onMenuPress={handleMenuPress}
-      />
+        <TopNav 
+          userName={userName}
+          onNotificationPress={handleNotificationPressWrapper}
+          onProfilePress={handleProfilePressWrapper}
+          onMenuPress={handleMenuPressWrapper}
+        />
       
       <View style={styles.content}>
         {activeTab === 'dashboard' && <DashboardUI />}
@@ -356,9 +340,9 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   greetingAccent: {
     color: '#FF6B35', // Orange color from image
@@ -370,11 +354,12 @@ const styles = StyleSheet.create({
   tenantRoomInfo: {
     textAlign: 'left',
     alignSelf: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 15,
+    marginTop: -15,
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: '#1f2937',
     marginBottom: 8, // Reduced from 16 to 8 to decrease gap
   },
@@ -387,12 +372,13 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 24,
+    fontFamily: fonts.bold,
     color: '#333',
-    fontWeight: 'bold',
     marginBottom: 8,
   },
   placeholderSubtext: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#666',
     textAlign: 'center',
   },
@@ -405,6 +391,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#666',
   },
   errorContainer: {
@@ -415,6 +402,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#DC2626',
     textAlign: 'center',
   },
@@ -426,6 +414,7 @@ const styles = StyleSheet.create({
   },
   noAnnouncementsText: {
     fontSize: 16,
+    fontFamily: fonts.regular,
     color: '#6b7280',
     textAlign: 'center',
   },

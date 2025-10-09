@@ -32,9 +32,9 @@ const SettingsSubNav = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="w-56 bg-white shadow-sm h-full flex flex-col">
+    <div className="w-56 bg-white shadow-sm flex flex-col">
       {/* Navigation items */}
-      <div className="px-3 py-4">
+      <div className="px-3 py-8 mt-2">
         <div className="space-y-1">
           {tabs.map((tab) => (
             <button
@@ -59,6 +59,7 @@ const SettingsSubNav = ({ activeTab, setActiveTab }) => {
 };
 
 export default SettingsSubNav;
+
 
 
 

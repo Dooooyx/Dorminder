@@ -230,20 +230,33 @@ const Rules = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+        <SideNav />
+        <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
+          <TopNav title="Rules" />
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex justify-center items-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading rules...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Newsreader, serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Newsreader, serif' }}>
       <SideNav />
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#F0F5FA' }}>
-        <TopNav title="Rules Management" />
-        
-        <div className="flex-1 overflow-y-auto p-8">
-            <div className="flex justify-between items-center mb-8">
+      <TopNav title="Rules" />
+      
+      <div className="ml-64 pt-20 min-h-screen" style={{ backgroundColor: '#F0F5FA' }}>
+        <div className="p-8">
+            <div className="flex justify-between items-center mb-8 mt-6">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Rules Management</h1>
                 <p className="text-gray-600 mt-2">Manage boarding house rules and regulations</p>
@@ -344,7 +357,9 @@ const Rules = () => {
                             onClick={() => handleEditRule(rule)}
                             className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                           >
-                            ✏️
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                           </button>
                           <button
                             onClick={() => handleDeleteRule(rule.id)}

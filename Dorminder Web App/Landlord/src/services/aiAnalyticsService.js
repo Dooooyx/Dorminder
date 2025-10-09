@@ -114,56 +114,135 @@ export class AIAnalyticsService {
   }
 
   /**
-   * Generate financial insights
+   * Generate advanced financial insights with predictive analysis
    */
   generateFinancialInsights(dashboardData) {
-    const { financialMetrics, occupancyMetrics } = dashboardData;
-    const { revenueGrowth, averageMonthlyRevenue } = financialMetrics;
+    const { financialMetrics, occupancyMetrics, maintenanceMetrics } = dashboardData;
+    const { revenueGrowth, averageMonthlyRevenue, last6MonthsRevenue } = financialMetrics;
     const { occupancyRate, retentionRate } = occupancyMetrics;
+    const { completionRate, averageResponseTime } = maintenanceMetrics;
 
     const insights = [];
 
-    // Revenue insights
+    // Advanced revenue insights with trend analysis
+    const revenueTrend = this.calculateTrend(last6MonthsRevenue);
+    const volatility = this.calculateVolatility(last6MonthsRevenue);
+    
     if (revenueGrowth > 5) {
       insights.push({
         type: 'positive',
         category: 'revenue',
-        message: `Strong revenue growth of ${revenueGrowth.toFixed(1)}% over the last 6 months`,
-        impact: 'high'
+        message: `Strong revenue growth of ${revenueGrowth.toFixed(1)}% with ${revenueTrend > 0 ? 'upward' : 'stabilizing'} trend`,
+        impact: 'high',
+        confidence: this.calculateConfidenceFromData(last6MonthsRevenue),
+        recommendation: 'Consider capacity expansion or premium pricing'
       });
     } else if (revenueGrowth < -5) {
       insights.push({
         type: 'negative',
         category: 'revenue',
-        message: `Revenue declining by ${Math.abs(revenueGrowth).toFixed(1)}% over the last 6 months`,
-        impact: 'high'
+        message: `Revenue declining by ${Math.abs(revenueGrowth).toFixed(1)}% - ${volatility > 0.3 ? 'high volatility' : 'consistent decline'}`,
+        impact: 'high',
+        confidence: this.calculateConfidenceFromData(last6MonthsRevenue),
+        recommendation: 'Immediate pricing and marketing review required'
+      });
+    } else {
+      insights.push({
+        type: 'neutral',
+        category: 'revenue',
+        message: `Stable revenue growth of ${revenueGrowth.toFixed(1)}% with ${volatility < 0.1 ? 'low volatility' : 'moderate volatility'}`,
+        impact: 'medium',
+        confidence: this.calculateConfidenceFromData(last6MonthsRevenue),
+        recommendation: 'Focus on operational efficiency improvements'
       });
     }
 
-    // Occupancy insights
+    // Advanced occupancy insights with seasonal analysis
+    const seasonalPattern = this.analyzeSeasonalPatterns(last6MonthsRevenue);
+    
     if (occupancyRate > 90) {
       insights.push({
         type: 'positive',
         category: 'occupancy',
-        message: `Excellent occupancy rate of ${occupancyRate.toFixed(1)}%`,
-        impact: 'high'
+        message: `Excellent occupancy rate of ${occupancyRate.toFixed(1)}% - ${seasonalPattern ? 'seasonal opportunities available' : 'consistent high demand'}`,
+        impact: 'high',
+        confidence: 0.9,
+        recommendation: 'Consider dynamic pricing for new tenants'
       });
     } else if (occupancyRate < 70) {
       insights.push({
         type: 'negative',
         category: 'occupancy',
-        message: `Low occupancy rate of ${occupancyRate.toFixed(1)}% - consider marketing strategies`,
-        impact: 'medium'
+        message: `Low occupancy rate of ${occupancyRate.toFixed(1)}% - ${seasonalPattern ? 'seasonal recovery expected' : 'structural issue requiring attention'}`,
+        impact: 'medium',
+        confidence: 0.8,
+        recommendation: 'Implement aggressive marketing and competitive pricing'
+      });
+    } else {
+      insights.push({
+        type: 'neutral',
+        category: 'occupancy',
+        message: `Good occupancy rate of ${occupancyRate.toFixed(1)}% with room for optimization`,
+        impact: 'medium',
+        confidence: 0.7,
+        recommendation: 'Focus on tenant satisfaction and retention programs'
       });
     }
 
-    // Retention insights
+    // Advanced retention insights with predictive analysis
+    const retentionRisk = this.calculateRetentionRisk(occupancyMetrics, financialMetrics);
+    
     if (retentionRate > 80) {
       insights.push({
         type: 'positive',
         category: 'retention',
-        message: `High tenant retention rate of ${retentionRate.toFixed(1)}%`,
-        impact: 'medium'
+        message: `High tenant retention rate of ${retentionRate.toFixed(1)}% - ${retentionRisk < 0.3 ? 'low churn risk' : 'monitor at-risk tenants'}`,
+        impact: 'medium',
+        confidence: 0.85,
+        recommendation: 'Maintain current tenant satisfaction programs'
+      });
+    } else if (retentionRate < 60) {
+      insights.push({
+        type: 'negative',
+        category: 'retention',
+        message: `Low retention rate of ${retentionRate.toFixed(1)}% - ${retentionRisk > 0.7 ? 'high churn risk' : 'moderate risk'}`,
+        impact: 'high',
+        confidence: 0.8,
+        recommendation: 'Implement tenant retention strategies immediately'
+      });
+    }
+
+    // Maintenance efficiency insights
+    if (completionRate > 90 && averageResponseTime < 24) {
+      insights.push({
+        type: 'positive',
+        category: 'maintenance',
+        message: `Outstanding maintenance performance: ${completionRate.toFixed(1)}% completion rate, ${averageResponseTime.toFixed(1)}h avg response`,
+        impact: 'medium',
+        confidence: 0.9,
+        recommendation: 'Use as competitive advantage in marketing'
+      });
+    } else if (completionRate < 70 || averageResponseTime > 48) {
+      insights.push({
+        type: 'negative',
+        category: 'maintenance',
+        message: `Maintenance issues: ${completionRate.toFixed(1)}% completion, ${averageResponseTime.toFixed(1)}h response time`,
+        impact: 'high',
+        confidence: 0.8,
+        recommendation: 'Prioritize maintenance process improvements'
+      });
+    }
+
+    // Cash flow insights
+    const cashFlowHealth = this.analyzeCashFlowHealth(financialMetrics);
+    if (cashFlowHealth.score < 0.6) {
+      insights.push({
+        type: 'warning',
+        category: 'cashflow',
+        message: `Cash flow concerns: ${cashFlowHealth.issues.join(', ')}`,
+        impact: 'high',
+        confidence: 0.9,
+        recommendation: 'Review payment collection processes and expenses'
       });
     }
 
@@ -288,6 +367,523 @@ export class AIAnalyticsService {
   }
 
   /**
+   * Calculate data volatility for trend analysis
+   */
+  calculateVolatility(values) {
+    if (values.length < 2) return 0;
+    
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const standardDeviation = Math.sqrt(variance);
+    
+    return mean > 0 ? standardDeviation / mean : 0; // Coefficient of variation
+  }
+
+  /**
+   * Calculate confidence score from data quality
+   */
+  calculateConfidenceFromData(values) {
+    if (!values || values.length < 3) return 0.5;
+    
+    let confidence = 0.7;
+    
+    // Higher confidence for more data points
+    if (values.length >= 6) confidence += 0.1;
+    if (values.length >= 12) confidence += 0.1;
+    
+    // Higher confidence for consistent data
+    const volatility = this.calculateVolatility(values);
+    if (volatility < 0.1) confidence += 0.1;
+    else if (volatility > 0.5) confidence -= 0.1;
+    
+    // Higher confidence for positive trends
+    const trend = this.calculateTrend(values);
+    if (trend > 0) confidence += 0.05;
+    
+    return Math.min(Math.max(confidence, 0.3), 0.95);
+  }
+
+  /**
+   * Analyze seasonal patterns in revenue data
+   */
+  analyzeSeasonalPatterns(values) {
+    if (values.length < 6) return false;
+    
+    // Simple seasonal analysis - check for recurring patterns
+    const quarterlyAverages = [];
+    for (let i = 0; i < values.length; i += 3) {
+      const quarter = values.slice(i, i + 3);
+      if (quarter.length > 0) {
+        quarterlyAverages.push(quarter.reduce((sum, val) => sum + val, 0) / quarter.length);
+      }
+    }
+    
+    if (quarterlyAverages.length < 2) return false;
+    
+    // Check for significant variation between quarters
+    const maxQuarter = Math.max(...quarterlyAverages);
+    const minQuarter = Math.min(...quarterlyAverages);
+    const variation = (maxQuarter - minQuarter) / maxQuarter;
+    
+    return variation > 0.15; // 15% variation indicates seasonality
+  }
+
+  /**
+   * Calculate retention risk based on multiple factors
+   */
+  calculateRetentionRisk(occupancyMetrics, financialMetrics) {
+    let risk = 0.5; // Base risk
+    
+    // Occupancy rate impact
+    if (occupancyMetrics.occupancyRate < 70) risk += 0.2;
+    else if (occupancyMetrics.occupancyRate > 90) risk -= 0.1;
+    
+    // Revenue growth impact
+    if (financialMetrics.revenueGrowth < -5) risk += 0.2;
+    else if (financialMetrics.revenueGrowth > 5) risk -= 0.1;
+    
+    // Retention rate impact
+    if (occupancyMetrics.retentionRate < 60) risk += 0.2;
+    else if (occupancyMetrics.retentionRate > 80) risk -= 0.1;
+    
+    return Math.min(Math.max(risk, 0), 1);
+  }
+
+  /**
+   * Analyze cash flow health
+   */
+  analyzeCashFlowHealth(financialMetrics) {
+    const issues = [];
+    let score = 1.0;
+    
+    // Check revenue consistency
+    if (financialMetrics.revenueGrowth < -10) {
+      issues.push('declining revenue');
+      score -= 0.3;
+    }
+    
+    // Check if average revenue is reasonable
+    if (financialMetrics.averageMonthlyRevenue < 10000) { // Less than ₱10k
+      issues.push('low monthly revenue');
+      score -= 0.2;
+    }
+    
+    // Check for revenue volatility
+    const volatility = this.calculateVolatility(financialMetrics.last6MonthsRevenue || []);
+    if (volatility > 0.4) {
+      issues.push('high revenue volatility');
+      score -= 0.2;
+    }
+    
+    return {
+      score: Math.max(score, 0),
+      issues: issues.length > 0 ? issues : ['healthy cash flow'],
+      volatility: volatility
+    };
+  }
+
+  /**
+   * Generate risk assessment for the property
+   */
+  generateRiskAssessment(dashboardData) {
+    const { financialMetrics, occupancyMetrics, maintenanceMetrics } = dashboardData;
+    
+    const risks = [];
+    let overallRisk = 'LOW';
+    
+    // Financial risks
+    if (financialMetrics.revenueGrowth < -10) {
+      risks.push({
+        category: 'Financial',
+        level: 'HIGH',
+        description: 'Significant revenue decline detected',
+        impact: 'Revenue stability at risk',
+        mitigation: 'Review pricing strategy and marketing efforts'
+      });
+    }
+    
+    // Occupancy risks
+    if (occupancyMetrics.occupancyRate < 60) {
+      risks.push({
+        category: 'Occupancy',
+        level: 'HIGH',
+        description: 'Low occupancy rate',
+        impact: 'Revenue generation below capacity',
+        mitigation: 'Implement aggressive marketing and competitive pricing'
+      });
+    }
+    
+    // Maintenance risks
+    if (maintenanceMetrics.completionRate < 60) {
+      risks.push({
+        category: 'Maintenance',
+        level: 'MEDIUM',
+        description: 'Low maintenance completion rate',
+        impact: 'Tenant satisfaction may decline',
+        mitigation: 'Improve maintenance response and completion processes'
+      });
+    }
+    
+    // Determine overall risk level
+    const highRisks = risks.filter(r => r.level === 'HIGH').length;
+    const mediumRisks = risks.filter(r => r.level === 'MEDIUM').length;
+    
+    if (highRisks >= 2) overallRisk = 'HIGH';
+    else if (highRisks >= 1 || mediumRisks >= 3) overallRisk = 'MEDIUM';
+    
+    return {
+      overallRisk,
+      risks,
+      riskScore: this.calculateRiskScore(risks)
+    };
+  }
+
+  /**
+   * Calculate numerical risk score
+   */
+  calculateRiskScore(risks) {
+    let score = 0;
+    risks.forEach(risk => {
+      switch (risk.level) {
+        case 'HIGH': score += 3; break;
+        case 'MEDIUM': score += 2; break;
+        case 'LOW': score += 1; break;
+      }
+    });
+    return Math.min(score / (risks.length || 1), 3);
+  }
+
+  /**
+   * Generate market intelligence insights
+   */
+  generateMarketIntelligence(dashboardData) {
+    const { financialMetrics, occupancyMetrics } = dashboardData;
+    
+    const marketInsights = [];
+    
+    // Market positioning analysis
+    const occupancyRate = occupancyMetrics.occupancyRate;
+    if (occupancyRate > 90) {
+      marketInsights.push({
+        type: 'competitive_advantage',
+        message: 'High occupancy indicates strong market position',
+        recommendation: 'Consider premium pricing for new tenants',
+        confidence: 0.9
+      });
+    } else if (occupancyRate < 70) {
+      marketInsights.push({
+        type: 'market_challenge',
+        message: 'Lower occupancy suggests market challenges',
+        recommendation: 'Analyze competitor pricing and amenities',
+        confidence: 0.8
+      });
+    }
+    
+    // Revenue performance analysis
+    const revenueGrowth = financialMetrics.revenueGrowth;
+    if (revenueGrowth > 10) {
+      marketInsights.push({
+        type: 'market_opportunity',
+        message: 'Strong revenue growth indicates market expansion',
+        recommendation: 'Consider capacity expansion opportunities',
+        confidence: 0.85
+      });
+    }
+    
+    // Pricing optimization
+    const averageRent = financialMetrics.averageMonthlyRent;
+    marketInsights.push({
+      type: 'pricing_optimization',
+      message: `Current average rent: ₱${averageRent.toLocaleString()}`,
+      recommendation: 'Compare with local market rates for optimization',
+      confidence: 0.7
+    });
+    
+    return marketInsights;
+  }
+
+  /**
+   * Generate tenant behavior analytics
+   */
+  generateTenantBehaviorAnalytics(dashboardData) {
+    const { occupancyMetrics, maintenanceMetrics } = dashboardData;
+    
+    const behaviorInsights = [];
+    
+    // Payment behavior
+    behaviorInsights.push({
+      metric: 'Payment Timeliness',
+      value: occupancyMetrics.retentionRate > 80 ? 'Excellent' : 'Needs Improvement',
+      trend: occupancyMetrics.retentionRate > 80 ? 'up' : 'down',
+      recommendation: occupancyMetrics.retentionRate > 80 ? 
+        'Maintain current payment processes' : 
+        'Implement automated payment reminders'
+    });
+    
+    // Maintenance request behavior
+    const avgResponseTime = maintenanceMetrics.averageResponseTime;
+    behaviorInsights.push({
+      metric: 'Maintenance Satisfaction',
+      value: avgResponseTime < 24 ? 'High' : avgResponseTime < 48 ? 'Medium' : 'Low',
+      trend: avgResponseTime < 24 ? 'up' : 'down',
+      recommendation: avgResponseTime < 24 ? 
+        'Continue current maintenance standards' : 
+        'Improve maintenance response times'
+    });
+    
+    return behaviorInsights;
+  }
+
+  /**
+   * Generate performance metrics
+   */
+  generatePerformanceMetrics(dashboardData) {
+    const { financialMetrics, occupancyMetrics, maintenanceMetrics } = dashboardData;
+    
+    const metrics = {
+      financial: {
+        revenueGrowth: financialMetrics.revenueGrowth,
+        averageMonthlyRevenue: financialMetrics.averageMonthlyRevenue,
+        revenueStability: 1 - this.calculateVolatility(financialMetrics.last6MonthsRevenue || []),
+        collectionEfficiency: this.calculateCollectionEfficiency(dashboardData)
+      },
+      operational: {
+        occupancyRate: occupancyMetrics.occupancyRate,
+        retentionRate: occupancyMetrics.retentionRate,
+        maintenanceCompletionRate: maintenanceMetrics.completionRate,
+        averageResponseTime: maintenanceMetrics.averageResponseTime
+      },
+      efficiency: {
+        roomUtilization: (occupancyMetrics.occupiedRooms / occupancyMetrics.totalRooms) * 100,
+        revenuePerRoom: occupancyMetrics.totalRooms > 0 ? financialMetrics.averageMonthlyRevenue / occupancyMetrics.totalRooms : 0,
+        tenantSatisfactionScore: this.calculateTenantSatisfactionScore(dashboardData)
+      }
+    };
+    
+    // Calculate overall performance score
+    const financialScore = this.calculateFinancialScore(metrics.financial);
+    const operationalScore = this.calculateOperationalScore(metrics.operational);
+    const efficiencyScore = this.calculateEfficiencyScore(metrics.efficiency);
+    
+    const overallScore = (financialScore + operationalScore + efficiencyScore) / 3;
+    
+    return {
+      ...metrics,
+      overall: {
+        score: overallScore,
+        grade: this.getPerformanceGrade(overallScore),
+        trend: this.calculatePerformanceTrend(dashboardData)
+      }
+    };
+  }
+
+  /**
+   * Generate optimization recommendations
+   */
+  generateOptimizationRecommendations(dashboardData) {
+    const recommendations = [];
+    const { financialMetrics, occupancyMetrics, maintenanceMetrics } = dashboardData;
+    
+    // Revenue optimization
+    if (occupancyMetrics.occupancyRate < 85) {
+      recommendations.push({
+        category: 'Revenue',
+        priority: 'HIGH',
+        title: 'Increase Occupancy Rate',
+        description: `Current occupancy: ${occupancyMetrics.occupancyRate.toFixed(1)}%. Target: 95%`,
+        impact: 'High',
+        effort: 'Medium',
+        timeframe: '2-3 months',
+        expectedBenefit: `Increase monthly revenue by ₱${Math.round((95 - occupancyMetrics.occupancyRate) / 100 * financialMetrics.totalMonthlyRent).toLocaleString()}`,
+        actions: [
+          'Implement competitive pricing strategy',
+          'Enhance marketing campaigns',
+          'Improve property amenities',
+          'Offer tenant referral incentives'
+        ]
+      });
+    }
+    
+    // Maintenance optimization
+    if (maintenanceMetrics.averageResponseTime > 24) {
+      recommendations.push({
+        category: 'Operations',
+        priority: 'MEDIUM',
+        title: 'Improve Maintenance Response Time',
+        description: `Current response time: ${maintenanceMetrics.averageResponseTime.toFixed(1)} hours`,
+        impact: 'Medium',
+        effort: 'Low',
+        timeframe: '1 month',
+        expectedBenefit: 'Increase tenant satisfaction and retention',
+        actions: [
+          'Implement 24/7 maintenance hotline',
+          'Create maintenance priority system',
+          'Establish vendor partnerships',
+          'Use mobile app for faster reporting'
+        ]
+      });
+    }
+    
+    // Financial optimization
+    if (financialMetrics.revenueGrowth < 0) {
+      recommendations.push({
+        category: 'Financial',
+        priority: 'HIGH',
+        title: 'Revenue Growth Strategy',
+        description: `Revenue declining by ${Math.abs(financialMetrics.revenueGrowth).toFixed(1)}%`,
+        impact: 'High',
+        effort: 'High',
+        timeframe: '3-6 months',
+        expectedBenefit: 'Reverse declining revenue trend',
+        actions: [
+          'Review and adjust pricing strategy',
+          'Implement dynamic pricing',
+          'Focus on tenant retention',
+          'Explore additional revenue streams'
+        ]
+      });
+    }
+    
+    // Cost optimization
+    recommendations.push({
+      category: 'Cost Management',
+      priority: 'MEDIUM',
+      title: 'Optimize Operating Costs',
+      description: 'Review and reduce unnecessary expenses',
+      impact: 'Medium',
+      effort: 'Medium',
+      timeframe: '2-4 months',
+      expectedBenefit: 'Reduce operating costs by 10-15%',
+      actions: [
+        'Audit utility usage and optimize',
+        'Negotiate vendor contracts',
+        'Implement energy-efficient solutions',
+        'Automate routine processes'
+      ]
+    });
+    
+    return recommendations;
+  }
+
+  /**
+   * Calculate collection efficiency
+   */
+  calculateCollectionEfficiency(dashboardData) {
+    const { rentCollected } = dashboardData;
+    return rentCollected ? rentCollected.rate / 100 : 0.8; // Default to 80% if no data
+  }
+
+  /**
+   * Calculate tenant satisfaction score
+   */
+  calculateTenantSatisfactionScore(dashboardData) {
+    const { occupancyMetrics, maintenanceMetrics } = dashboardData;
+    
+    // Simple satisfaction calculation based on available metrics
+    let score = 0.7; // Base score
+    
+    // Occupancy rate impact
+    if (occupancyMetrics.occupancyRate > 90) score += 0.2;
+    else if (occupancyMetrics.occupancyRate < 70) score -= 0.2;
+    
+    // Retention rate impact
+    if (occupancyMetrics.retentionRate > 80) score += 0.1;
+    else if (occupancyMetrics.retentionRate < 60) score -= 0.1;
+    
+    // Maintenance performance impact
+    if (maintenanceMetrics.completionRate > 90) score += 0.1;
+    else if (maintenanceMetrics.completionRate < 70) score -= 0.1;
+    
+    if (maintenanceMetrics.averageResponseTime < 24) score += 0.1;
+    else if (maintenanceMetrics.averageResponseTime > 48) score -= 0.1;
+    
+    return Math.min(Math.max(score, 0), 1);
+  }
+
+  /**
+   * Calculate financial performance score
+   */
+  calculateFinancialScore(metrics) {
+    let score = 0.5;
+    
+    if (metrics.revenueGrowth > 5) score += 0.3;
+    else if (metrics.revenueGrowth < -5) score -= 0.3;
+    
+    if (metrics.revenueStability > 0.8) score += 0.2;
+    else if (metrics.revenueStability < 0.6) score -= 0.2;
+    
+    if (metrics.collectionEfficiency > 0.9) score += 0.2;
+    else if (metrics.collectionEfficiency < 0.7) score -= 0.2;
+    
+    return Math.min(Math.max(score, 0), 1);
+  }
+
+  /**
+   * Calculate operational performance score
+   */
+  calculateOperationalScore(metrics) {
+    let score = 0.5;
+    
+    if (metrics.occupancyRate > 90) score += 0.3;
+    else if (metrics.occupancyRate < 70) score -= 0.3;
+    
+    if (metrics.retentionRate > 80) score += 0.2;
+    else if (metrics.retentionRate < 60) score -= 0.2;
+    
+    if (metrics.maintenanceCompletionRate > 90) score += 0.2;
+    else if (metrics.maintenanceCompletionRate < 70) score -= 0.2;
+    
+    if (metrics.averageResponseTime < 24) score += 0.1;
+    else if (metrics.averageResponseTime > 48) score -= 0.1;
+    
+    return Math.min(Math.max(score, 0), 1);
+  }
+
+  /**
+   * Calculate efficiency performance score
+   */
+  calculateEfficiencyScore(metrics) {
+    let score = 0.5;
+    
+    if (metrics.roomUtilization > 90) score += 0.3;
+    else if (metrics.roomUtilization < 70) score -= 0.3;
+    
+    if (metrics.revenuePerRoom > 15000) score += 0.2; // ₱15k+ per room
+    else if (metrics.revenuePerRoom < 10000) score -= 0.2;
+    
+    if (metrics.tenantSatisfactionScore > 0.8) score += 0.2;
+    else if (metrics.tenantSatisfactionScore < 0.6) score -= 0.2;
+    
+    return Math.min(Math.max(score, 0), 1);
+  }
+
+  /**
+   * Get performance grade
+   */
+  getPerformanceGrade(score) {
+    if (score >= 0.9) return 'A+';
+    if (score >= 0.8) return 'A';
+    if (score >= 0.7) return 'B+';
+    if (score >= 0.6) return 'B';
+    if (score >= 0.5) return 'C+';
+    if (score >= 0.4) return 'C';
+    return 'D';
+  }
+
+  /**
+   * Calculate performance trend
+   */
+  calculatePerformanceTrend(dashboardData) {
+    // Simple trend calculation based on recent performance
+    const { financialMetrics } = dashboardData;
+    const growth = financialMetrics.revenueGrowth || 0;
+    
+    if (growth > 5) return 'improving';
+    if (growth < -5) return 'declining';
+    return 'stable';
+  }
+
+  /**
    * Clear forecast cache
    */
   clearCache() {
@@ -343,7 +939,7 @@ export class AIAnalyticsService {
   }
 
   /**
-   * Generate enhanced forecast using GROQ AI with robust fallback
+   * Generate enhanced forecast using GROQ AI with robust fallback and advanced analytics
    */
   async generateEnhancedForecast(dashboardData, months = 12) {
     const cacheKey = `enhanced_forecast_${dashboardData.propertyId}_${months}`;
@@ -390,12 +986,31 @@ export class AIAnalyticsService {
       // Add AI enhancement flag
       enhancedForecast.aiEnhanced = aiEnhanced;
 
+      // Add new advanced analytics features
+      console.log('🔍 Adding advanced analytics features...');
+      
+      // Generate risk assessment
+      enhancedForecast.riskAssessment = this.generateRiskAssessment(dashboardData);
+      
+      // Generate market intelligence
+      enhancedForecast.marketIntelligence = this.generateMarketIntelligence(dashboardData);
+      
+      // Generate tenant behavior analytics
+      enhancedForecast.tenantBehavior = this.generateTenantBehaviorAnalytics(dashboardData);
+      
+      // Add performance metrics
+      enhancedForecast.performanceMetrics = this.generatePerformanceMetrics(dashboardData);
+      
+      // Add optimization recommendations
+      enhancedForecast.optimizationRecommendations = this.generateOptimizationRecommendations(dashboardData);
+
       // Cache the result
       this.forecastCache.set(cacheKey, {
         data: enhancedForecast,
         timestamp: Date.now()
       });
 
+      console.log('✅ Enhanced forecast with advanced analytics completed');
       return enhancedForecast;
     } catch (error) {
       console.error('❌ All forecast methods failed, using emergency fallback:', error);
