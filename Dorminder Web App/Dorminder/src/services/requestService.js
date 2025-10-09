@@ -30,6 +30,15 @@ export const requestService = {
 
       const tenantData = tenantResult.data;
 
+      // Debug logging
+      console.log('🔍 Tenant Data for Request:', {
+        tenantId: currentUser.uid,
+        propertyId: tenantData.propertyId,
+        landlordId: tenantData.landlordId,
+        tenantName: `${tenantData.firstName} ${tenantData.lastName}`,
+        category: requestData.category
+      });
+
       // Prepare request data
       const request = {
         title: requestData.title,
@@ -49,6 +58,8 @@ export const requestService = {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
+
+      console.log('📝 Request being submitted:', request);
 
       // Add request to Firestore
       const docRef = await addDoc(collection(db, 'requests'), request);

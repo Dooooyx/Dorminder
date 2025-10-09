@@ -133,25 +133,33 @@ const NewRequestForm = ({ navigation }) => {
       
       // Upload images if selected
       if (selectedImages.length) {
+        console.log('📸 Starting image upload...', selectedImages.length, 'images');
         for (const asset of selectedImages) {
-          const uploadResult = await cloudinaryService.uploadFile(asset.uri);
+          console.log('📸 Uploading image:', asset.uri);
+          const uploadResult = await cloudinaryService.uploadFile(asset.uri, 'requests');
           if (uploadResult.success) {
+            console.log('✅ Image uploaded successfully:', uploadResult.downloadURL);
             imageUrls.push(uploadResult.downloadURL);
           } else {
-            console.error('Image upload failed:', uploadResult.error);
+            console.error('❌ Image upload failed:', uploadResult.error);
             Alert.alert('Upload Error', 'Failed to upload image. Please try again.');
             return;
           }
         }
+        console.log('📸 All images uploaded:', imageUrls);
       }
 
       // Submit request
-      const result = await requestService.submitRequest({
+      const requestData = {
         title: title.trim(),
         description: description.trim(),
         images: imageUrls,
         category: priority
-      });
+      };
+      
+      console.log('📤 Submitting request with data:', requestData);
+      
+      const result = await requestService.submitRequest(requestData);
 
       if (result.success) {
         Alert.alert(

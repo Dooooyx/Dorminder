@@ -31,9 +31,16 @@ const OngoingRequests = ({ category }) => {
       }
       
       const propertyId = user.uid; // Use user's UID as propertyId
+      console.log('🔍 Landlord querying requests with:', {
+        propertyId,
+        status: 'pending',
+        category
+      });
+      
       const result = await requestService.getRequestsByStatus(propertyId, 'pending', category);
       
       if (result.success) {
+        console.log('✅ Requests loaded:', result.data.length, 'requests found');
         setOngoingRequests(result.data);
       } else {
         console.error('Error loading ongoing requests:', result.error);
@@ -171,31 +178,48 @@ const OngoingRequests = ({ category }) => {
                 {request.description}
               </p>
 
-              {/* Image holder */}
+              {/* Image holder - Enhanced for better display */}
               <div className="mb-3">
                 {(() => {
                   const images = getAllImages(request);
+                  console.log('🖼️ Request images for', request.title, ':', images);
+                  
                   if (images.length > 0) {
                     return (
                       <div className="relative inline-block">
                         <img
                           src={images[0]}
                           alt="Request image"
-                          className="w-60 h-60 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-64 h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
                           onClick={() => handleImagePress(request, 0)}
+                          onError={(e) => {
+                            console.error('Image failed to load:', images[0]);
+                            e.target.style.display = 'none';
+                          }}
                         />
                         {/* Image Counter Badge */}
                         {images.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
                             +{images.length - 1}
                           </div>
                         )}
+                        {/* Image Gallery Icon */}
+                        <div className="absolute bottom-2 right-2 bg-white bg-opacity-90 rounded-full p-1 shadow-md">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
                       </div>
                     );
                   } else {
                     return (
-                      <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
-                        <span className="text-xs text-gray-400">No image</span>
+                      <div className="w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-xs text-gray-400">No image</span>
+                        </div>
                       </div>
                     );
                   }
