@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SideNav from '../components/SideNav';
 import TopNav from '../components/TopNav';
 import AnnouncementForm from '../components/AnnouncementForm';
@@ -6,6 +6,9 @@ import IncidentReportForm from '../components/IncidentReportForm';
 import { incidentService } from '../services/incidentService';
 import { FirestoreService } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
+import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
 const ToolsReports = () => {
   const [activeTab, setActiveTab] = useState('announcements');
@@ -18,8 +21,13 @@ const ToolsReports = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const { user } = useAuth();
+  const { userData } = useProfile();
   const firestoreService = new FirestoreService();
+  const incidentUnsubscribeRef = useRef(null);
+  const announcementUnsubscribeRef = useRef(null);
 
   const tabs = [
     { id: 'announcements', label: 'Announcements', icon: '📢' },
@@ -31,7 +39,77 @@ const ToolsReports = () => {
     if (activeTab === 'incidents') {
       loadIncidents();
     }
-  }, [activeTab]);
+    
+    // Set up real-time listeners
+    setupRealTimeListeners();
+    
+    // Cleanup listeners on unmount
+    return () => {
+      if (incidentUnsubscribeRef.current) {
+        incidentUnsubscribeRef.current();
+      }
+      if (announcementUnsubscribeRef.current) {
+        announcementUnsubscribeRef.current();
+      }
+    };
+  }, [activeTab, user?.uid]);
+
+  // Set up real-time listeners for live updates
+  const setupRealTimeListeners = () => {
+    if (!user?.uid) return;
+    
+    const propertyId = user?.propertyId || user?.uid;
+    
+    // Real-time listener for incidents
+    try {
+      const incidentsQuery = query(
+        collection(db, 'incidents'),
+        where('propertyId', '==', propertyId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      incidentUnsubscribeRef.current = onSnapshot(incidentsQuery, (snapshot) => {
+        const incidentData = [];
+        snapshot.forEach((doc) => {
+          incidentData.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        console.log('📋 Real-time incident update:', incidentData.length, 'incidents');
+        setIncidents(incidentData);
+      }, (error) => {
+        console.error('❌ Real-time incident listener error:', error);
+      });
+    } catch (error) {
+      console.error('❌ Error setting up incident listener:', error);
+    }
+    
+    // Real-time listener for announcements
+    try {
+      const announcementsQuery = query(
+        collection(db, 'announcements'),
+        where('propertyId', '==', propertyId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      announcementUnsubscribeRef.current = onSnapshot(announcementsQuery, (snapshot) => {
+        const announcementData = [];
+        snapshot.forEach((doc) => {
+          announcementData.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        console.log('📢 Real-time announcement update:', announcementData.length, 'announcements');
+        setAnnouncements(announcementData);
+      }, (error) => {
+        console.error('❌ Real-time announcement listener error:', error);
+      });
+    } catch (error) {
+      console.error('❌ Error setting up announcement listener:', error);
+    }
+  };
 
   const loadAnnouncements = async () => {
     try {
@@ -60,12 +138,16 @@ const ToolsReports = () => {
   const loadIncidents = async () => {
     try {
       setLoading(true);
-      // In real implementation, get propertyId from user context
-      const propertyId = user?.propertyId || 'default';
+      // Get propertyId from user - should match what's used when creating incidents
+      const propertyId = user?.propertyId || user?.uid || 'default';
+      console.log('🔍 Loading incidents for propertyId:', propertyId);
+      console.log('👤 User data:', { uid: user?.uid, propertyId: user?.propertyId });
+      
       const incidentsList = await incidentService.getIncidentsByProperty(propertyId);
+      console.log('📋 Loaded incidents:', incidentsList.length, 'incidents');
       setIncidents(incidentsList);
     } catch (error) {
-      console.error('Error loading incidents:', error);
+      console.error('❌ Error loading incidents:', error);
     } finally {
       setLoading(false);
     }
@@ -73,18 +155,31 @@ const ToolsReports = () => {
 
   const handleSaveAnnouncement = async (announcementData) => {
     try {
+      setIsCreatingAnnouncement(true);
+      
       const propertyId = user?.propertyId || 'default';
       const landlordId = user?.uid || 'default';
       
       console.log('🏢 Landlord saving announcement with propertyId:', propertyId);
       console.log('👤 Landlord user data:', user);
+      console.log('👤 Landlord profile data:', userData);
+      console.log('🔍 Firebase Auth displayName:', user?.displayName);
+      console.log('🔍 Profile firstName:', userData?.firstName);
+      console.log('🔍 Profile lastName:', userData?.lastName);
+      
+      // Use the correct landlord name from ProfileContext instead of Firebase Auth
+      const landlordName = userData?.firstName && userData?.lastName 
+        ? `${userData.firstName} ${userData.lastName}`
+        : (userData?.displayName || user?.displayName || 'Landlord');
+      
+      console.log('✅ Final landlord name to use:', landlordName);
       
       const announcementToSave = {
         ...announcementData,
         propertyId,
         landlordId,
-        landlordName: user?.displayName || 'Landlord',
-        postedBy: user?.displayName || 'Landlord'
+        landlordName,
+        postedBy: landlordName
       };
       
       console.log('💾 Announcement to save:', announcementToSave);
@@ -101,13 +196,22 @@ const ToolsReports = () => {
         await loadAnnouncements();
         setIsFormOpen(false);
         setEditingAnnouncement(null);
-        alert('Announcement saved successfully!');
+        
+        // Show success popup
+        setShowSuccessPopup(true);
+        
+        // Auto-hide popup after 3 seconds
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
       } else {
         alert('Failed to save announcement: ' + result.error);
       }
     } catch (error) {
       console.error('Error saving announcement:', error);
       alert('Failed to save announcement');
+    } finally {
+      setIsCreatingAnnouncement(false);
     }
   };
 
@@ -130,12 +234,15 @@ const ToolsReports = () => {
 
   const handleCreateIncident = async (incidentData) => {
     try {
-      await incidentService.createIncident(incidentData);
+      console.log('📝 handleCreateIncident called with:', incidentData);
+      const incidentId = await incidentService.createIncident(incidentData);
+      console.log('✅ Incident created with ID:', incidentId);
       setIsIncidentFormOpen(false);
-      loadIncidents();
+      console.log('🔄 Loading incidents after creation...');
+      await loadIncidents();
       alert('Incident report created successfully!');
     } catch (error) {
-      console.error('Error creating incident:', error);
+      console.error('❌ Error creating incident:', error);
       throw error;
     }
   };
@@ -354,20 +461,20 @@ const ToolsReports = () => {
         </div>
 
         {filteredIncidents.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <div className="text-gray-400 text-6xl mb-4">📋</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {searchTerm || filterStatus !== 'all' ? 'No Incidents Found' : 'No Incident Reports'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {searchTerm || filterStatus !== 'all' 
-                ? 'Try adjusting your search or filter' 
-                : 'No incidents have been reported yet'}
+                ? 'Try adjusting your search or filter criteria to find incidents' 
+                : 'No incidents have been reported yet. Create your first incident report to get started.'}
             </p>
             {!searchTerm && filterStatus === 'all' && (
               <button
                 onClick={() => setIsIncidentFormOpen(true)}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm hover:shadow-md"
               >
                 Report First Incident
               </button>
@@ -376,40 +483,70 @@ const ToolsReports = () => {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {filteredIncidents.map(incident => (
-              <div key={incident.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
+              <div key={incident.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 hover:border-red-200">
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                      </div>
                       <h4 className="text-lg font-semibold text-gray-900">{incident.title}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
-                        {incident.status}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
+                        {incident.status?.toUpperCase()}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.severity)}`}>
-                        {incident.severity}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                      <span>👤 {incident.tenantName}</span>
-                      <span>🏠 Room {incident.roomNumber}</span>
-                      <span>📂 {incident.category}</span>
-                      <span>📅 {formatDate(incident.createdAt?.toDate?.() || incident.createdAt)}</span>
-                      {incident.estimatedCost && (
-                        <span className="font-medium text-red-600">💰 ₱{parseFloat(incident.estimatedCost).toLocaleString()}</span>
+                      {incident.severity && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.severity)}`}>
+                          {incident.severity?.toUpperCase()}
+                        </span>
                       )}
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <span className="text-blue-500">👤</span>
+                        <span>{incident.tenantName}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <span className="text-green-500">🏠</span>
+                        <span>Room {incident.roomNumber}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <span className="text-purple-500">📂</span>
+                        <span>{incident.category}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-gray-600">
+                        <span className="text-orange-500">📅</span>
+                        <span>{formatDate(incident.createdAt?.toDate?.() || incident.createdAt)}</span>
+                      </div>
+                    </div>
+                    {incident.estimatedCost && (
+                      <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-red-500 font-medium">💰</span>
+                          <span className="font-semibold text-red-700">
+                            Estimated Cost: ₱{parseFloat(incident.estimatedCost).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     {!incident.resolved && (
                       <button
                         onClick={() => handleResolveIncident(incident.id)}
-                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors shadow-sm hover:shadow-md flex items-center space-x-1"
                       >
-                        ✓ Resolve
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Resolve</span>
                       </button>
                     )}
                     <button
                       onClick={() => handleDeleteIncident(incident.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete incident"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -417,16 +554,30 @@ const ToolsReports = () => {
                     </button>
                   </div>
                 </div>
-                <p className="text-gray-700 mb-2">{incident.description}</p>
-                <div className="text-sm text-gray-500">
-                  Reported by: {incident.reportedBy}
-                  {incident.resolved && incident.resolutionNotes && (
-                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <strong className="text-green-900">Resolution:</strong>
-                      <p className="text-green-800 mt-1">{incident.resolutionNotes}</p>
-                    </div>
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-700 leading-relaxed">{incident.description}</p>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    <span className="font-medium">Reported by:</span> {incident.reportedBy}
+                  </div>
+                  {incident.resolved && (
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
+                      ✓ RESOLVED
+                    </span>
                   )}
                 </div>
+                {incident.resolved && incident.resolutionNotes && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <strong className="text-green-900">Resolution Notes:</strong>
+                    </div>
+                    <p className="text-green-800 leading-relaxed">{incident.resolutionNotes}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -498,6 +649,7 @@ const ToolsReports = () => {
                 setEditingAnnouncement(null);
               }}
               initialData={editingAnnouncement}
+              isLoading={isCreatingAnnouncement}
             />
           </div>
         </div>
@@ -510,8 +662,37 @@ const ToolsReports = () => {
             <IncidentReportForm
               onSubmit={handleCreateIncident}
               onCancel={() => setIsIncidentFormOpen(false)}
-              propertyId={user?.propertyId || 'default'}
+              propertyId={user?.propertyId || user?.uid || 'default'}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Success!
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              Announcement posted successfully!
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}

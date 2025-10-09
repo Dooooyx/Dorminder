@@ -28,6 +28,13 @@ export class TenantDataService {
       const tenantDoc = querySnapshot.docs[0];
       const tenantData = tenantDoc.data();
       
+      console.log('👤 Tenant document data:', tenantData);
+      console.log('📝 Tenant name fields:', {
+        firstName: tenantData.firstName,
+        lastName: tenantData.lastName,
+        fullName: `${tenantData.firstName || ''} ${tenantData.lastName || ''}`.trim()
+      });
+      
       return { 
         success: true, 
         data: {

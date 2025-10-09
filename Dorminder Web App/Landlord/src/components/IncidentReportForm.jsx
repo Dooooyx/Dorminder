@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
+import { tenantService } from '../services/tenantService';
 
 const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null }) => {
   const { user } = useAuth();
@@ -17,6 +18,8 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
 
   const [loading, setLoading] = useState(false);
   const [tenants, setTenants] = useState([]);
+  const [loadingTenants, setLoadingTenants] = useState(true);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const categories = [
     'Maintenance',
@@ -28,24 +31,35 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
     'Other'
   ];
 
-  // Sample tenant data - in real app, this would come from tenantService
-  const sampleTenants = [
-    { id: 1, firstName: 'Maria', lastName: 'Perez', roomNumber: '101' },
-    { id: 2, firstName: 'Luthar', lastName: 'Jimenez', roomNumber: '102' },
-    { id: 3, firstName: 'John', lastName: 'Santos', roomNumber: '103' },
-    { id: 4, firstName: 'Darl', lastName: 'Pantinople', roomNumber: '104' },
-    { id: 5, firstName: 'Sarah', lastName: 'Johnson', roomNumber: '105' },
-    { id: 6, firstName: 'Michael', lastName: 'Brown', roomNumber: '106' },
-    { id: 7, firstName: 'Emily', lastName: 'Davis', roomNumber: '107' },
-    { id: 8, firstName: 'David', lastName: 'Wilson', roomNumber: '108' },
-  ];
+  // Load real tenant data from tenantService
+  const loadTenants = async () => {
+    try {
+      setLoadingTenants(true);
+      const result = await tenantService.getTenantsByProperty(user?.uid || propertyId);
+      if (result.success) {
+        console.log('📋 Loaded tenants for incident report:', result.data);
+        setTenants(result.data);
+      } else {
+        console.error('❌ Failed to load tenants:', result.error);
+        setTenants([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading tenants:', error);
+      setTenants([]);
+    } finally {
+      setLoadingTenants(false);
+    }
+  };
 
   useEffect(() => {
-    // Load tenants (in real app, this would be from tenantService)
-    setTenants(sampleTenants);
+    // Load real tenant data
+    loadTenants();
     
-    // Set reported by field with landlord name
-    const landlordName = userData?.firstName ? userData.firstName : 'Landlord';
+    // Set reported by field with landlord name from ProfileContext
+    const landlordName = userData?.firstName && userData?.lastName 
+      ? `${userData.firstName} ${userData.lastName}`
+      : (userData?.displayName || user?.displayName || 'Landlord');
+    
     setFormData(prev => ({
       ...prev,
       reportedBy: `Landlord (${landlordName})`
@@ -62,7 +76,7 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
         estimatedCost: initialData.estimatedCost || '',
       });
     }
-  }, [initialData, userData]);
+  }, [initialData, userData, user]);
 
 
   const handleChange = (e) => {
@@ -133,7 +147,19 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
         updatedAt: new Date(),
       };
 
+      console.log('🚨 Creating incident with data:', incidentData);
+      console.log('🏢 PropertyId for incident:', propertyId);
+      
       await onSubmit(incidentData);
+      
+      // Show success popup
+      setShowSuccessPopup(true);
+      
+      // Auto-hide popup after 3 seconds
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+      }, 3000);
+      
     } catch (error) {
       console.error('Error submitting incident:', error);
       alert('Failed to create incident report');
@@ -144,10 +170,22 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
 
 
   return (
-    <div className="p-6">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">
-        {initialData ? 'Edit Incident Report' : 'Create New Incident Report'}
-      </h3>
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="p-2 bg-red-100 rounded-lg">
+          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">
+            {initialData ? 'Edit Incident Report' : 'Create New Incident Report'}
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {initialData ? 'Update incident details' : 'Document a new incident or issue'}
+          </p>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
@@ -213,11 +251,14 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
               onChange={handleRoomChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              disabled={loadingTenants}
             >
-              <option value="">Select Room</option>
+              <option value="">
+                {loadingTenants ? 'Loading rooms...' : 'Select Room'}
+              </option>
               {tenants.map(tenant => (
                 <option key={tenant.id} value={tenant.roomNumber}>
-                  Room {tenant.roomNumber}
+                  Room {tenant.roomNumber} - {tenant.firstName} {tenant.lastName}
                 </option>
               ))}
             </select>
@@ -275,22 +316,22 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
 
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
           <button
             type="button"
             onClick={onCancel}
-            disabled={loading}
-            className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            disabled={loading || loadingTenants}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+            disabled={loading || loadingTenants}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             {loading && (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -299,6 +340,35 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
           </button>
         </div>
       </form>
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Success!
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              Incident report created successfully!
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
