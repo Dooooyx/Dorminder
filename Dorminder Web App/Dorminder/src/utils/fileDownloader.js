@@ -1,6 +1,7 @@
 import { Alert, View, Text, StyleSheet, Dimensions } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 // Download receipt as text file
 export const downloadReceiptAsText = async (receiptText, bill) => {
@@ -9,11 +10,11 @@ export const downloadReceiptAsText = async (receiptText, bill) => {
     const filename = `bill-receipt-${billingPeriod.replace(/\s+/g, '-')}.txt`;
     
     // Create a temporary file
-    const { writeAsStringAsync, documentDirectory } = require('expo-file-system');
-    const fileUri = `${documentDirectory}${filename}`;
+    // Use imported FileSystem
+    const fileUri = `${FileSystem.documentDirectory}${filename}`;
     
     // Write the receipt text to file
-    await writeAsStringAsync(fileUri, receiptText, { encoding: 'utf8' });
+    await FileSystem.writeAsStringAsync(fileUri, receiptText, { encoding: 'utf8' });
     
     // Check if sharing is available
     const isAvailable = await Sharing.isAvailableAsync();
@@ -104,8 +105,8 @@ export const downloadReceiptAsHTML = async (receiptText, bill) => {
 </html>`;
     
     // Create a temporary file
-    const { writeAsStringAsync, documentDirectory } = require('expo-file-system');
-    const fileUri = `${documentDirectory}${filename}`;
+    // Use imported FileSystem
+    const fileUri = `${FileSystem.documentDirectory}${filename}`;
     
     // Write the HTML content to file
     await writeAsStringAsync(fileUri, htmlContent, { encoding: 'utf8' });
@@ -281,12 +282,12 @@ export const shareReceiptText = async (receiptText, bill) => {
     }
     
     // Create a temporary text file
-    const { writeAsStringAsync, documentDirectory } = require('expo-file-system');
+    // Use imported FileSystem
     const filename = `bill-receipt-${billingPeriod.replace(/\s+/g, '-')}.txt`;
-    const fileUri = `${documentDirectory}${filename}`;
+    const fileUri = `${FileSystem.documentDirectory}${filename}`;
     
     // Write the receipt text to file
-    await writeAsStringAsync(fileUri, receiptText, { encoding: 'utf8' });
+    await FileSystem.writeAsStringAsync(fileUri, receiptText, { encoding: 'utf8' });
     
     // Share the file
     await Sharing.shareAsync(fileUri, {

@@ -2,13 +2,20 @@
 let jsPDF, Share;
 
 const loadDependencies = async () => {
-  if (!jsPDF) {
-    const jsPDFModule = await import('jspdf');
-    jsPDF = jsPDFModule.jsPDF;
-  }
-  if (!Share) {
-    const ShareModule = await import('react-native-share');
-    Share = ShareModule.default;
+  try {
+    if (!jsPDF) {
+      const jsPDFModule = await import('jspdf');
+      // Handle both default export and named export
+      jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+    }
+    if (!Share) {
+      const ShareModule = await import('react-native-share');
+      // Handle both default export and named export
+      Share = ShareModule.default || ShareModule;
+    }
+  } catch (error) {
+    console.error('Error loading dependencies:', error);
+    throw error;
   }
 };
 

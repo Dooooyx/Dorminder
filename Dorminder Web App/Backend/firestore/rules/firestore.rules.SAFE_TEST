@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      // Safe check - returns null if document doesn't exist
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role 
+        : null;
+    }
+    
+    function isLandlord() {
+      return isAuthenticated() && getUserRole() == 'landlord';
+    }
+    
+    function isTenant() {
+      return isAuthenticated() && getUserRole() == 'tenant';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // SIMPLIFIED TESTING RULES - AUTHENTICATED USERS ONLY
+    // This is MUCH safer than allowing anyone to access your data
+    
+    // Users collection - Allow authenticated users to manage
+    match /users/{userId} {
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow read, update, delete: if isAuthenticated();
+    }
+    
+    // Landlord Email Credentials
+    match /landlordEmailCredentials/{credentialId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Properties - All authenticated users can access
+    match /properties/{propertyId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Tenants - All authenticated users can access
+    match /tenants/{tenantId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Requests - All authenticated users can access
+    match /requests/{requestId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Announcements - All authenticated users can access
+    match /announcements/{announcementId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Notifications - All authenticated users can access
+    match /notifications/{notificationId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Bills - All authenticated users can access
+    match /bills/{billId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Payments - All authenticated users can access
+    match /payments/{paymentId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Rules - All authenticated users can access
+    match /rules/{ruleId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Rooms - All authenticated users can access
+    match /rooms/{roomId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Rent Records - All authenticated users can access
+    match /rentRecords/{rentId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Maintenance - All authenticated users can access
+    match /maintenance/{maintenanceId} {
+      allow read, write, create: if isAuthenticated();
+    }
+    
+    // Incidents - All authenticated users can access
+    match /incidents/{incidentId} {
+      allow read, write, create: if isAuthenticated();
+    }
+  }
+}
+

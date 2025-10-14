@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { showDownloadOptions, shareReceiptText } from '../utils/fileDownloader';
+import { downloadReceiptAsJPEG, shareReceiptText } from '../utils/fileDownloader';
 
 const ReceiptModal = ({ visible, onClose, receiptText, bill }) => {
   const receiptRef = useRef(null);
@@ -51,10 +51,10 @@ const ReceiptModal = ({ visible, onClose, receiptText, bill }) => {
             <Text style={styles.copyButtonText}>Share</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.downloadButton} onPress={() => {
-            // Show download options with receipt ref for JPEG capture
-            showDownloadOptions(receiptText, safeBill, receiptRef);
+            // Download receipt as JPEG
+            downloadReceiptAsJPEG(receiptRef, safeBill);
           }}>
-            <Text style={styles.downloadButtonText}>Download</Text>
+            <Text style={styles.downloadButtonText}>Download JPG</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.closeFooterButton} onPress={onClose}>
             <Text style={styles.closeFooterButtonText}>Close</Text>
@@ -108,12 +108,14 @@ const styles = StyleSheet.create({
   receiptContainer: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   receiptText: {
     fontSize: 12,

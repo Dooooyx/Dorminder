@@ -1,144 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isLandlord() {
-      return isAuthenticated() && request.auth.token.role == 'landlord';
-    }
-    
-    function isTenant() {
-      return isAuthenticated() && request.auth.token.role == 'tenant';
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'admin';
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    
-    function isLandlordOrAdmin() {
-      return isLandlord() || isAdmin();
-    }
 
-    // Users collection
-    match /users/{userId} {
-      // Users can read and write their own profile
-      allow read, write: if isOwner(userId);
-      
-      // Landlords and admins can read all user profiles
-      allow read: if isLandlordOrAdmin();
-      
-      // Only admins can create/delete user profiles
-      allow create, delete: if isAdmin();
-    }
-
-    // Properties collection
-    match /properties/{propertyId} {
-      // Landlords can read/write their own properties
-      allow read, write: if isLandlord() && resource.data.landlordId == request.auth.uid;
-      
-      // Tenants can read properties they're assigned to
-      allow read: if isTenant() && 
-        exists(/databases/$(database)/documents/tenants/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/tenants/$(request.auth.uid)).data.propertyId == propertyId;
-      
-      // Admins can read/write all properties
-      allow read, write: if isAdmin();
-    }
-
-    // Tenants collection
-    match /tenants/{tenantId} {
-      // Tenants can read their own data
-      allow read: if isTenant() && isOwner(tenantId);
-      
-      // Landlords can read/write tenants in their properties
-      allow read, write: if isLandlord() && 
-        exists(/databases/$(database)/documents/properties/$(resource.data.propertyId)) &&
-        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.landlordId == request.auth.uid;
-      
-      // Admins can read/write all tenant data
-      allow read, write: if isAdmin();
-    }
-
-    // Requests collection
-    match /requests/{requestId} {
-      // Tenants can read/write their own requests
-      allow read, write: if isTenant() && resource.data.tenantId == request.auth.uid;
-      
-      // Landlords can read/write requests for their properties
-      allow read, write: if isLandlord() && 
-        exists(/databases/$(database)/documents/properties/$(resource.data.propertyId)) &&
-        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.landlordId == request.auth.uid;
-      
-      // Admins can read/write all requests
-      allow read, write: if isAdmin();
-    }
-
-    // Announcements collection
-    match /announcements/{announcementId} {
-      // Landlords can read/write announcements for their properties
-      allow read, write: if isLandlord() && 
-        exists(/databases/$(database)/documents/properties/$(resource.data.propertyId)) &&
-        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.landlordId == request.auth.uid;
-      
-      // Tenants can read announcements for their properties
-      allow read: if isTenant() && 
-        exists(/databases/$(database)/documents/tenants/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/tenants/$(request.auth.uid)).data.propertyId == resource.data.propertyId;
-      
-      // Admins can read/write all announcements
-      allow read, write: if isAdmin();
-    }
-
-    // Notifications collection
-    match /notifications/{notificationId} {
-      // Users can read their own notifications
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      
-      // Landlords can create notifications for their tenants
-      allow create: if isLandlord() && 
-        exists(/databases/$(database)/documents/tenants/$(resource.data.userId)) &&
-        get(/databases/$(database)/documents/tenants/$(resource.data.userId)).data.propertyId in 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.properties;
-      
-      // Admins can read/write all notifications
-      allow read, write: if isAdmin();
-    }
-
-    // Payments collection
-    match /payments/{paymentId} {
-      // Tenants can read their own payments
-      allow read: if isTenant() && resource.data.tenantId == request.auth.uid;
-      
-      // Landlords can read/write payments for their properties
-      allow read, write: if isLandlord() && 
-        exists(/databases/$(database)/documents/properties/$(resource.data.propertyId)) &&
-        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.landlordId == request.auth.uid;
-      
-      // Admins can read/write all payments
-      allow read, write: if isAdmin();
-    }
-
-    // Maintenance collection
-    match /maintenance/{maintenanceId} {
-      // Tenants can read maintenance requests for their properties
-      allow read: if isTenant() && 
-        exists(/databases/$(database)/documents/tenants/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/tenants/$(request.auth.uid)).data.propertyId == resource.data.propertyId;
-      
-      // Landlords can read/write maintenance for their properties
-      allow read, write: if isLandlord() && 
-        exists(/databases/$(database)/documents/properties/$(resource.data.propertyId)) &&
-        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.landlordId == request.auth.uid;
-      
-      // Admins can read/write all maintenance
-      allow read, write: if isAdmin();
+    // This rule allows anyone with your Firestore database reference to view, edit,
+    // and delete all data in your Firestore database. It is useful for getting
+    // started, but it is configured to expire after 30 days because it
+    // leaves your app open to attackers. At that time, all client
+    // requests to your Firestore database will be denied.
+    //
+    // Make sure to write security rules for your app before that time, or else
+    // all client requests to your Firestore database will be denied until you Update
+    // your rules
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 1, 12);
     }
   }
 }

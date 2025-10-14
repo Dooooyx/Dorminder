@@ -1,21 +1,49 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/auth';
 import { bypassEmailVerification } from '../utils/emailVerificationBypass';
 
 const EmailVerification = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [isBypassing, setIsBypassing] = useState(false);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
 
   useEffect(() => {
     // Check if email is already verified
     if (user && user.emailVerified) {
       setIsVerified(true);
+      // Auto-redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
     }
-  }, [user]);
+  }, [user, navigate]);
+
+  // Periodically check verification status (every 5 seconds)
+  useEffect(() => {
+    if (!user || user.emailVerified) return;
+
+    const checkVerification = async () => {
+      setIsCheckingVerification(true);
+      await user.reload(); // Refresh user data from Firebase
+      setIsCheckingVerification(false);
+      
+      if (user.emailVerified) {
+        setIsVerified(true);
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      }
+    };
+
+    const interval = setInterval(checkVerification, 5000);
+    return () => clearInterval(interval);
+  }, [user, navigate]);
 
   const handleResendVerification = async () => {
     setIsResending(true);
@@ -32,8 +60,20 @@ const EmailVerification = () => {
     setIsResending(false);
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const handleRefresh = async () => {
+    setIsCheckingVerification(true);
+    if (user) {
+      await user.reload(); // Refresh user data from Firebase
+      if (user.emailVerified) {
+        setIsVerified(true);
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      } else {
+        setResendMessage('Email not verified yet. Please check your inbox.');
+      }
+    }
+    setIsCheckingVerification(false);
   };
 
   const handleBypass = async () => {
@@ -45,7 +85,7 @@ const EmailVerification = () => {
     if (result.success) {
       setResendMessage('Email verification bypassed for development! Redirecting...');
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       }, 2000);
     } else {
       setResendMessage('Failed to bypass verification. Please try again.');
@@ -70,11 +110,14 @@ const EmailVerification = () => {
             </p>
             <div className="mt-6">
               <button
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => navigate('/dashboard')}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Go to Dashboard
               </button>
+              <p className="mt-2 text-sm text-gray-500 text-center">
+                Redirecting automatically...
+              </p>
             </div>
           </div>
         </div>
@@ -98,6 +141,15 @@ const EmailVerification = () => {
           <p className="mt-1 text-sm text-gray-500">
             Please check your email and click the verification link to activate your account.
           </p>
+          {isCheckingVerification && (
+            <div className="mt-3 flex items-center justify-center text-sm text-gray-500">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Checking verification status...
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -128,9 +180,10 @@ const EmailVerification = () => {
             </p>
             <button
               onClick={handleRefresh}
-              className="text-orange-600 hover:text-orange-500 text-sm font-medium"
+              disabled={isCheckingVerification}
+              className="text-orange-600 hover:text-orange-500 text-sm font-medium disabled:opacity-50"
             >
-              Refresh page
+              {isCheckingVerification ? 'Checking...' : 'Check verification status'}
             </button>
           </div>
 

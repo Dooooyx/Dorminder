@@ -104,10 +104,14 @@ export class AuthService {
         }
       }
 
+      // Create user document
+      console.log('Creating user document for:', user.uid);
       await setDoc(doc(db, 'users', user.uid), userDocData);
+      console.log('User document created successfully');
 
       // Store email credentials separately for security (if landlord)
       if (userData.role === 'landlord' && userData.systemEmail && userData.systemEmailPassword) {
+        console.log('Creating email credentials document...');
         const emailCredentialsData = {
           landlordId: user.uid,
           gmailUser: userData.systemEmail,
@@ -115,6 +119,7 @@ export class AuthService {
           updatedAt: new Date()
         };
         await setDoc(doc(db, 'landlordEmailCredentials', user.uid), emailCredentialsData);
+        console.log('Email credentials created successfully');
       }
 
       return { 
@@ -125,7 +130,31 @@ export class AuthService {
       };
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, error: error.message };
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Registration failed. ';
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email already exists. Please try signing in instead.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        default:
+          errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+      }
+      
+      return { success: false, error: errorMessage };
     }
   }
 

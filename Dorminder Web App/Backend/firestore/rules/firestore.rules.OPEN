@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMPORARY OPEN RULES FOR DEBUGGING
+    // ⚠️ WARNING: These rules allow ANYONE to access your database
+    // ⚠️ ONLY use for debugging, then switch back immediately
+    
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

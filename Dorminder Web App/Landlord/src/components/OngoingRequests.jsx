@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ic_prev from '../assets/icons/ic_prev.png';
 import ic_next from '../assets/icons/ic_next.png';
 
-const OngoingRequests = ({ category }) => {
+const OngoingRequests = ({ category, onRequestUpdate }) => {
   const [ongoingRequests, setOngoingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -60,6 +60,10 @@ const OngoingRequests = ({ category }) => {
       if (result.success) {
         // Refresh the list
         await loadOngoingRequests();
+        // Update parent counts
+        if (onRequestUpdate) {
+          onRequestUpdate();
+        }
         console.log('Request completed successfully');
       } else {
         console.error('Error completing request:', result.error);

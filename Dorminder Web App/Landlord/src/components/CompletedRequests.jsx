@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ic_prev from '../assets/icons/ic_prev.png';
 import ic_next from '../assets/icons/ic_next.png';
 
-const CompletedRequests = ({ category }) => {
+const CompletedRequests = ({ category, onRequestUpdate }) => {
   const [completedRequests, setCompletedRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState(null);
