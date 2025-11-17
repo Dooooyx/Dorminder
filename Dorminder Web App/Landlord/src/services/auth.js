@@ -41,12 +41,18 @@ export class AuthService {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.currentUser = user;
-        // Get user role from Firestore document (free tier approach)
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          this.userRole = userDoc.data().role || 'tenant';
+        
+        // Check if super admin by email
+        if (user.email && user.email.toLowerCase() === 'superadmin@gmail.com') {
+          this.userRole = 'superadmin';
         } else {
-          this.userRole = 'tenant'; // Default role
+          // Get user role from Firestore document (free tier approach)
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            this.userRole = userDoc.data().role || 'tenant';
+          } else {
+            this.userRole = 'tenant'; // Default role
+          }
         }
       } else {
         this.currentUser = null;
@@ -164,7 +170,35 @@ export class AuthService {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if email is verified
+      // Get user role from Firestore document (free tier approach)
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const role = userData.role || 'tenant';
+
+      // Check if super admin (by email)
+      const isSuperAdmin = email.toLowerCase() === 'superadmin@gmail.com';
+      
+      // For super admin, skip email verification check
+      if (isSuperAdmin) {
+        return { success: true, user, role: 'superadmin', enabled: true };
+      }
+
+      // For landlords, check if account is enabled
+      if (role === 'landlord') {
+        const enabled = userData.enabled !== false; // Default to true if not set
+        
+        if (!enabled) {
+          // Sign out the user if account is disabled
+          await signOut(auth);
+          return { 
+            success: false, 
+            error: 'Your account has been disabled. Please contact support.',
+            enabled: false
+          };
+        }
+      }
+
+      // Check if email is verified (for non-super-admin users)
       if (!user.emailVerified) {
         // Sign out the user if email is not verified
         await signOut(auth);
@@ -175,11 +209,7 @@ export class AuthService {
         };
       }
 
-      // Get user role from Firestore document (free tier approach)
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const role = userDoc.exists() ? userDoc.data().role : 'tenant';
-
-      return { success: true, user, role };
+      return { success: true, user, role, enabled: userData.enabled !== false };
     } catch (error) {
       console.error('Sign in error:', error);
       

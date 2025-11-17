@@ -14,6 +14,7 @@ import Rules from './pages/Rules';
 import Billings from './pages/Billings';
 import ToolsReports from './pages/ToolsReports';
 import Settings from './pages/Settings';
+import SuperAdmin from './pages/SuperAdmin';
 
 // Unauthorized page component
 const Unauthorized = () => (
@@ -55,6 +56,7 @@ function App() {
             <Route path="/tools-reports" element={<ProtectedRoute><ToolsReports /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/super-admin" element={<ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute>} />
             <Route path="/logout" element={<Navigate to="/login" replace />} />
             </Routes>
           </div>

@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     isLandlord: role === 'landlord',
     isTenant: role === 'tenant',
     isAdmin: role === 'admin',
+    isSuperAdmin: role === 'superadmin',
     authService
   };
 

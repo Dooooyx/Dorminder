@@ -21,6 +21,22 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // Check for super admin credentials
+      if (email.toLowerCase() === 'superadmin@gmail.com' && password === 'Testing@1234') {
+        // Sign in with super admin credentials
+        const result = await authService.signIn(email, password);
+        
+        if (result.success) {
+          // Navigate to super admin page
+          navigate('/super-admin');
+        } else {
+          setError(result.error);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Regular landlord login
       const result = await authService.signIn(email, password);
       
       if (result.success) {
