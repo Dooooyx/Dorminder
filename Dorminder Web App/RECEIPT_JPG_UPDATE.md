@@ -74,3 +74,7 @@ The receipt download is now fully functional as JPG format. Users can:
 - ✅ Download receipts as high-quality JPG images
 - ✅ Share receipts via text or messaging apps
 - ✅ Save receipts to their device's photo gallery
+
+
+
+

@@ -16,6 +16,11 @@ const Rules = () => {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
+  const [isCreateDefaultModalOpen, setIsCreateDefaultModalOpen] = useState(false);
+  const [ruleToDelete, setRuleToDelete] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -89,19 +94,32 @@ const Rules = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteRule = async (ruleId) => {
-    if (window.confirm('Are you sure you want to delete this rule?')) {
-      try {
-        const result = await rulesService.deleteRule(ruleId);
-        if (result.success) {
-          await loadRules();
-        } else {
-          alert('Error deleting rule: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error deleting rule:', error);
-        alert('Error deleting rule');
+  const handleDeleteRule = (ruleId) => {
+    setRuleToDelete(ruleId);
+    setIsDeleteConfirmModalOpen(true);
+  };
+
+  const confirmDeleteRule = async () => {
+    if (!ruleToDelete) return;
+    
+    setIsDeleteConfirmModalOpen(false);
+    try {
+      const result = await rulesService.deleteRule(ruleToDelete);
+      if (result.success) {
+        await loadRules();
+        setSuccessMessage('Rule deleted successfully!');
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
+      } else {
+        alert('Error deleting rule: ' + result.error);
       }
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+      alert('Error deleting rule');
+    } finally {
+      setRuleToDelete(null);
     }
   };
 
@@ -139,10 +157,14 @@ const Rules = () => {
       const failedDeletes = results.filter(result => !result.success);
       
       if (failedDeletes.length === 0) {
-        alert(`Successfully deleted ${selectedRules.length} rule(s)`);
+        setSuccessMessage(`Successfully deleted ${selectedRules.length} rule(s)`);
+        setShowSuccessPopup(true);
         setSelectedRules([]);
         setIsBulkDeleteModalOpen(false);
         await loadRules();
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
       } else {
         alert(`Failed to delete ${failedDeletes.length} rule(s)`);
       }
@@ -211,20 +233,27 @@ const Rules = () => {
     }));
   };
 
-  const createDefaultRules = async () => {
-    if (window.confirm('This will create default rules for your property. Continue?')) {
-      try {
-        const result = await rulesService.createDefaultRules(user.uid);
-        if (result.success) {
-          await loadRules();
-          alert('Default rules created successfully!');
-        } else {
-          alert('Error creating default rules: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error creating default rules:', error);
-        alert('Error creating default rules');
+  const handleCreateDefaultRules = () => {
+    setIsCreateDefaultModalOpen(true);
+  };
+
+  const confirmCreateDefaultRules = async () => {
+    setIsCreateDefaultModalOpen(false);
+    try {
+      const result = await rulesService.createDefaultRules(user.uid);
+      if (result.success) {
+        await loadRules();
+        setSuccessMessage('Default rules created successfully!');
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
+      } else {
+        alert('Error creating default rules: ' + result.error);
       }
+    } catch (error) {
+      console.error('Error creating default rules:', error);
+      alert('Error creating default rules');
     }
   };
 
@@ -272,7 +301,7 @@ const Rules = () => {
                   </button>
                 )}
                 <button
-                  onClick={createDefaultRules}
+                  onClick={handleCreateDefaultRules}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Create Default Rules
@@ -298,7 +327,7 @@ const Rules = () => {
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No Rules Yet</h3>
                 <p className="text-gray-600 mb-6">Create your first rule or use the default template</p>
                 <button
-                  onClick={createDefaultRules}
+                  onClick={handleCreateDefaultRules}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Create Default Rules
@@ -388,7 +417,7 @@ const Rules = () => {
 
       {/* Add/Edit Rule Modal */}
       {(isAddModalOpen || isEditModalOpen) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6">
               {isEditModalOpen ? 'Edit Rule' : 'Add New Rule'}
@@ -513,7 +542,7 @@ const Rules = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`px-6 py-2 rounded-lg transition-colors flex items-center justify-center min-w-[140px] ${
+                  className={`px-6 py-2 rounded-lg text-white transition-colors flex items-center justify-center min-w-[140px] ${
                     isSubmitting 
                       ? 'bg-blue-600 cursor-not-allowed' 
                       : 'bg-blue-600 hover:bg-blue-700'
@@ -539,8 +568,8 @@ const Rules = () => {
 
       {/* Bulk Delete Confirmation Modal */}
       {isBulkDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
             <h2 className="text-2xl font-bold mb-4 text-red-600">Delete Rules</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete {selectedRules.length} rule(s)? This action cannot be undone.
@@ -573,6 +602,92 @@ const Rules = () => {
                 ) : (
                   `Delete ${selectedRules.length} Rule(s)`
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single Delete Confirmation Modal */}
+      {isDeleteConfirmModalOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Delete Rule</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this rule? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setIsDeleteConfirmModalOpen(false);
+                  setRuleToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteRule}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Default Rules Confirmation Modal */}
+      {isCreateDefaultModalOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-blue-600">Create Default Rules</h2>
+            <p className="text-gray-700 mb-6">
+              This will create default rules for your property. If you already have rules, they will remain. Continue?
+            </p>
+            
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setIsCreateDefaultModalOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCreateDefaultRules}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create Rules
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Success!
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              {successMessage}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                OK
               </button>
             </div>
           </div>

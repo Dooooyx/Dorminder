@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { billingService } from '../services/billingService';
 
-const BillingActionMenu = ({ bill, onUpdate, onClose }) => {
+const BillingActionMenu = ({ bill, onUpdate, onError, onClose, onDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -10,19 +10,26 @@ const BillingActionMenu = ({ bill, onUpdate, onClose }) => {
     try {
       const result = await billingService.updateBillStatus(bill.id, newStatus);
       if (result.success) {
-        onUpdate();
-        onClose();
-        // Show success message
-        alert(`✅ Bill status updated to ${newStatus}`);
+        setIsOpen(false);
+        onUpdate(`Bill status updated to ${newStatus}`);
       } else {
-        alert(`❌ Failed to update status: ${result.error}`);
+        setIsOpen(false);
+        if (onError) {
+          onError(`Failed to update status: ${result.error}`);
+        } else {
+          alert(`❌ Failed to update status: ${result.error}`);
+        }
       }
     } catch (error) {
       console.error('Error updating bill status:', error);
-      alert(`❌ Error updating status: ${error.message}`);
+      setIsOpen(false);
+      if (onError) {
+        onError(`Error updating status: ${error.message}`);
+      } else {
+        alert(`❌ Error updating status: ${error.message}`);
+      }
     } finally {
       setLoading(false);
-      setIsOpen(false);
     }
   };
 
@@ -42,13 +49,22 @@ const BillingActionMenu = ({ bill, onUpdate, onClose }) => {
     setLoading(true);
     try {
       // This would integrate with your email service
-      alert(`📧 Reminder sent to ${bill.tenantName} for Room ${bill.roomNumber}`);
+      setIsOpen(false);
+      if (onUpdate) {
+        onUpdate(`Reminder sent to ${bill.tenantName} for Room ${bill.roomNumber}`);
+      } else {
+        alert(`📧 Reminder sent to ${bill.tenantName} for Room ${bill.roomNumber}`);
+      }
     } catch (error) {
       console.error('Error sending reminder:', error);
-      alert(`❌ Failed to send reminder: ${error.message}`);
+      setIsOpen(false);
+      if (onError) {
+        onError(`Failed to send reminder: ${error.message}`);
+      } else {
+        alert(`❌ Failed to send reminder: ${error.message}`);
+      }
     } finally {
       setLoading(false);
-      setIsOpen(false);
     }
   };
 
@@ -56,6 +72,13 @@ const BillingActionMenu = ({ bill, onUpdate, onClose }) => {
     onClose();
     // This would generate a PDF receipt
     window.dispatchEvent(new CustomEvent('generateReceipt', { detail: bill }));
+  };
+
+  const handleDeleteBill = () => {
+    setIsOpen(false);
+    if (onDelete) {
+      onDelete(bill.id);
+    }
   };
 
   const getStatusOptions = () => {
@@ -187,6 +210,14 @@ const BillingActionMenu = ({ bill, onUpdate, onClose }) => {
                     <span>Generate Receipt</span>
                   </button>
                 )}
+                
+                <button
+                  onClick={handleDeleteBill}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center space-x-2"
+                >
+                  <span>🗑️</span>
+                  <span>Delete Bill</span>
+                </button>
               </div>
             </div>
           </div>

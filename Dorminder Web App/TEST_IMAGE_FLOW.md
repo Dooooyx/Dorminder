@@ -122,3 +122,7 @@ Share these debug logs:
 3. Screenshot of the request in Firebase Console (showing images array)
 
 This will help identify exactly where the issue is occurring.
+
+
+
+

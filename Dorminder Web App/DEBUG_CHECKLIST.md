@@ -117,3 +117,7 @@ If still not working, share these debug logs:
 - Web app console output (landlord query)
 - Screenshot of Firebase Console showing the request document
 
+
+
+
+

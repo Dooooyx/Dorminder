@@ -403,6 +403,36 @@ export class TenantService {
     }
   }
 
+  // Update tenant payment status
+  async updateTenantPaymentStatus(userId, paymentStatus) {
+    try {
+      // Find tenant by userId (Firebase Auth UID)
+      const tenantsQuery = query(
+        collection(db, 'tenants'),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(tenantsQuery);
+      
+      if (querySnapshot.empty) {
+        console.warn(`⚠️ No tenant found with userId: ${userId}`);
+        return { success: false, error: 'Tenant not found' };
+      }
+      
+      // Update the first matching tenant (should only be one)
+      const tenantDoc = querySnapshot.docs[0];
+      await updateDoc(doc(db, 'tenants', tenantDoc.id), {
+        paymentStatus,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log(`✅ Updated tenant payment status to ${paymentStatus} for userId: ${userId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating tenant payment status:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Update tenant information
   async updateTenant(tenantId, updateData) {
     try {

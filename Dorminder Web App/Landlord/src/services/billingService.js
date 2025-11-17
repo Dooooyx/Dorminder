@@ -32,6 +32,18 @@ export class BillingService {
         updatedAt: serverTimestamp()
       });
       
+      // Update tenant payment status to Pending when new bill is created
+      if (billData.tenantId) {
+        try {
+          const { tenantService } = await import('./tenantService');
+          await tenantService.updateTenantPaymentStatus(billData.tenantId, 'Pending');
+          console.log(`✅ Updated tenant ${billData.tenantId} payment status to Pending`);
+        } catch (tenantError) {
+          console.error('Error updating tenant payment status:', tenantError);
+          // Don't fail the bill creation if tenant update fails
+        }
+      }
+      
       console.log('✅ Bill created successfully with ID:', billRef.id);
       return { success: true, billId: billRef.id };
     } catch (error) {
@@ -126,14 +138,12 @@ export class BillingService {
 
       await updateDoc(billRef, updateData);
       
-      // Update tenant payment status if bill is paid
-      if (status === 'Paid' && billData.tenantId) {
+      // Sync tenant payment status based on all bills
+      if (billData.tenantId) {
         try {
-          const { tenantService } = await import('./tenantService');
-          await tenantService.updateTenantPaymentStatus(billData.tenantId, 'Paid');
-          console.log(`✅ Updated tenant ${billData.tenantId} payment status to Paid`);
+          await this.syncTenantPaymentStatus(billData.tenantId);
         } catch (tenantError) {
-          console.error('Error updating tenant payment status:', tenantError);
+          console.error('Error syncing tenant payment status:', tenantError);
           // Don't fail the bill update if tenant update fails
         }
       }
@@ -205,6 +215,16 @@ export class BillingService {
         updatedAt: serverTimestamp()
       });
       
+      // Sync tenant payment status based on all bills
+      if (billData.tenantId) {
+        try {
+          await this.syncTenantPaymentStatus(billData.tenantId);
+        } catch (syncError) {
+          console.error('Error syncing tenant payment status:', syncError);
+          // Don't fail the payment if sync fails
+        }
+      }
+      
       return { 
         success: true, 
         data: { 
@@ -216,6 +236,44 @@ export class BillingService {
     } catch (error) {
       console.error('Error processing payment:', error);
       return { success: false, error: error.message };
+    }
+  }
+
+  // Sync tenant payment status based on all bills
+  async syncTenantPaymentStatus(tenantId) {
+    try {
+      // Get all bills for this tenant
+      const billsQuery = query(
+        collection(db, 'bills'),
+        where('tenantId', '==', tenantId),
+        orderBy('createdAt', 'desc')
+      );
+      const billsSnapshot = await getDocs(billsQuery);
+      
+      if (billsSnapshot.empty) {
+        // No bills found, set to Paid (no outstanding bills)
+        const { tenantService } = await import('./tenantService');
+        await tenantService.updateTenantPaymentStatus(tenantId, 'Paid');
+        return;
+      }
+      
+      // Check if all bills are paid
+      let hasPendingBills = false;
+      billsSnapshot.forEach((doc) => {
+        const bill = doc.data();
+        if (bill.status !== 'Paid' && bill.status !== 'paid') {
+          hasPendingBills = true;
+        }
+      });
+      
+      // Update tenant payment status
+      const { tenantService } = await import('./tenantService');
+      const newPaymentStatus = hasPendingBills ? 'Pending' : 'Paid';
+      await tenantService.updateTenantPaymentStatus(tenantId, newPaymentStatus);
+      console.log(`✅ Synced tenant ${tenantId} payment status to ${newPaymentStatus}`);
+    } catch (error) {
+      console.error('Error syncing tenant payment status:', error);
+      throw error;
     }
   }
 
@@ -251,7 +309,30 @@ export class BillingService {
   // Delete bill
   async deleteBill(billId) {
     try {
-      await deleteDoc(doc(db, 'bills', billId));
+      // Get bill data before deleting to sync tenant status
+      const billRef = doc(db, 'bills', billId);
+      const billDoc = await getDoc(billRef);
+      
+      if (!billDoc.exists()) {
+        return { success: false, error: 'Bill not found' };
+      }
+      
+      const billData = billDoc.data();
+      const tenantId = billData.tenantId;
+      
+      // Delete the bill
+      await deleteDoc(billRef);
+      
+      // Sync tenant payment status after deletion
+      if (tenantId) {
+        try {
+          await this.syncTenantPaymentStatus(tenantId);
+        } catch (syncError) {
+          console.error('Error syncing tenant payment status after deletion:', syncError);
+          // Don't fail the deletion if sync fails
+        }
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Error deleting bill:', error);

@@ -108,3 +108,7 @@ match /landlordEmailCredentials/{credentialId} {
 ---
 
 **✅ Registration should now work properly without permission errors!** 🎉
+
+
+
+

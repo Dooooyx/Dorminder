@@ -46,35 +46,6 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      const result = await authService.signInWithGoogle();
-      
-      if (result.success) {
-        // Check if user is a landlord
-        if (result.role === 'landlord') {
-          // Check if email is verified
-          if (result.user.emailVerified) {
-            navigate('/dashboard');
-          } else {
-            navigate('/email-verification');
-          }
-        } else {
-          setError('Access denied. This portal is for landlords only.');
-          await authService.signOut();
-        }
-      } else {
-        setError(result.error);
-      }
-    } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ fontFamily: 'Newsreader, serif' }}>
@@ -136,9 +107,8 @@ const Login = () => {
             {/* Helper Links */}
             <div className="flex justify-between items-center text-[15px]">
               <div className="text-gray-600">
-                <span>Don't have an Account? </span>
                 <a href="/register" className="text-[#EE6C4D]  hover:text-[#F18A73] hover:underline font-medium">
-                  Register
+                  Subscribe to get started
                 </a>
               </div>
               <a href="/forgot-password" className="text-gray-400 hover:text-gray-700">
@@ -153,32 +123,6 @@ const Login = () => {
               className="w-full py-3 bg-gray-800 text-white rounded-lg text-2xl font-bold hover:bg-gray-900 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing In...' : 'Log In'}
-            </button>
-
-            {/* OR Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">OR</span>
-              </div>
-            </div>
-
-            {/* Google Login Button */}
-            <button 
-              type="button" 
-              disabled={loading}
-              className="w-full py-3 bg-white border text-2xl border-gray-200 shadow-md text-gray-800 rounded-lg font-normal hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleGoogleLogin}
-            >
-              <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
-              <img 
-                src="https://developers.google.com/identity/images/g-logo.png" 
-                alt="Google" 
-                className="w-4 h-4 object-contain"/>
-              </div>
-              <span>{loading ? 'Signing In...' : 'Log In with Google'}</span>
             </button>
           </form>
         </div>

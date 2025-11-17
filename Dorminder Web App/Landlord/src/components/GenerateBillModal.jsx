@@ -176,7 +176,7 @@ const GenerateBillModal = ({ isOpen, onClose, onGenerateBill }) => {
           setErrors({});
           onClose();
           
-          alert('Bill generated successfully!');
+          // Success is handled by parent component via onGenerateBill callback
         } else {
           throw new Error(result.error);
         }

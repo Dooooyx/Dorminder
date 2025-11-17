@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { billingService } from '../services/billingService';
 
-const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed }) => {
+const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed, onSuccess, onError }) => {
   const [paymentData, setPaymentData] = useState({
     paymentAmount: '',
     paymentDate: new Date().toISOString().split('T')[0],
@@ -88,14 +88,19 @@ const PaymentProcessingModal = ({ isOpen, onClose, bill, onPaymentProcessed }) =
           setErrors({});
           onClose();
           
-          alert(`Payment processed successfully! Status: ${result.data.status}`);
+          // Show success message via callback
+          if (onSuccess) {
+            onSuccess(`Payment processed successfully! Status: ${result.data.status}`);
+          }
         } else {
           throw new Error(result.error);
         }
         
       } catch (error) {
         console.error('Error processing payment:', error);
-        alert(`Error processing payment: ${error.message}`);
+        if (onError) {
+          onError(`Error processing payment: ${error.message}`);
+        }
       } finally {
         setIsProcessing(false);
       }

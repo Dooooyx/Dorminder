@@ -23,6 +23,18 @@ const ToolsReports = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showIncidentSuccessPopup, setShowIncidentSuccessPopup] = useState(false);
+  const [showIncidentErrorPopup, setShowIncidentErrorPopup] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showDeleteAnnouncementModal, setShowDeleteAnnouncementModal] = useState(false);
+  const [incidentSuccessMessage, setIncidentSuccessMessage] = useState('');
+  const [incidentErrorMessage, setIncidentErrorMessage] = useState('');
+  const [announcementSuccessMessage, setAnnouncementSuccessMessage] = useState('');
+  const [announcementErrorMessage, setAnnouncementErrorMessage] = useState('');
+  const [selectedIncidentId, setSelectedIncidentId] = useState(null);
+  const [selectedAnnouncementId, setSelectedAnnouncementId] = useState(null);
+  const [resolutionNotes, setResolutionNotes] = useState('');
   const { user } = useAuth();
   const { userData } = useProfile();
   const firestoreService = new FirestoreService();
@@ -215,20 +227,40 @@ const ToolsReports = () => {
     }
   };
 
-  const handleDeleteAnnouncement = async (id) => {
-    if (window.confirm('Are you sure you want to delete this announcement?')) {
-      try {
-        const result = await firestoreService.deleteAnnouncement(id);
-        if (result.success) {
-          await loadAnnouncements();
-          alert('Announcement deleted successfully!');
-        } else {
-          alert('Failed to delete announcement: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error deleting announcement:', error);
-        alert('Failed to delete announcement');
+  const handleDeleteAnnouncement = (id) => {
+    setSelectedAnnouncementId(id);
+    setShowDeleteAnnouncementModal(true);
+  };
+
+  const confirmDeleteAnnouncement = async () => {
+    if (!selectedAnnouncementId) return;
+    
+    setShowDeleteAnnouncementModal(false);
+    try {
+      const result = await firestoreService.deleteAnnouncement(selectedAnnouncementId);
+      if (result.success) {
+        await loadAnnouncements();
+        setAnnouncementSuccessMessage('Announcement deleted successfully!');
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
+      } else {
+        setAnnouncementErrorMessage('Failed to delete announcement: ' + result.error);
+        setShowIncidentErrorPopup(true); // Reuse error popup
+        setTimeout(() => {
+          setShowIncidentErrorPopup(false);
+        }, 3000);
       }
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      setAnnouncementErrorMessage('Failed to delete announcement');
+      setShowIncidentErrorPopup(true); // Reuse error popup
+      setTimeout(() => {
+        setShowIncidentErrorPopup(false);
+      }, 3000);
+    } finally {
+      setSelectedAnnouncementId(null);
     }
   };
 
@@ -240,37 +272,76 @@ const ToolsReports = () => {
       setIsIncidentFormOpen(false);
       console.log('🔄 Loading incidents after creation...');
       await loadIncidents();
-      alert('Incident report created successfully!');
+      setIncidentSuccessMessage('Incident report created successfully!');
+      setShowIncidentSuccessPopup(true);
+      setTimeout(() => {
+        setShowIncidentSuccessPopup(false);
+      }, 3000);
     } catch (error) {
       console.error('❌ Error creating incident:', error);
+      setIncidentErrorMessage('Failed to create incident report');
+      setShowIncidentErrorPopup(true);
       throw error;
     }
   };
 
-  const handleResolveIncident = async (incidentId) => {
-    const resolutionNotes = prompt('Enter resolution notes:');
-    if (resolutionNotes !== null) {
-      try {
-        await incidentService.resolveIncident(incidentId, resolutionNotes);
-        loadIncidents();
-        alert('Incident marked as resolved!');
-      } catch (error) {
-        console.error('Error resolving incident:', error);
-        alert('Failed to resolve incident');
-      }
+  const handleResolveIncident = (incidentId) => {
+    setSelectedIncidentId(incidentId);
+    setResolutionNotes('');
+    setShowResolveModal(true);
+  };
+
+  const confirmResolveIncident = async () => {
+    if (!selectedIncidentId) return;
+    
+    if (!resolutionNotes.trim()) {
+      setIncidentErrorMessage('Please enter resolution notes');
+      setShowIncidentErrorPopup(true);
+      return;
+    }
+
+    setShowResolveModal(false);
+    try {
+      await incidentService.resolveIncident(selectedIncidentId, resolutionNotes);
+      loadIncidents();
+      setIncidentSuccessMessage('Incident marked as resolved!');
+      setShowIncidentSuccessPopup(true);
+      setTimeout(() => {
+        setShowIncidentSuccessPopup(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error resolving incident:', error);
+      setIncidentErrorMessage('Failed to resolve incident');
+      setShowIncidentErrorPopup(true);
+    } finally {
+      setSelectedIncidentId(null);
+      setResolutionNotes('');
     }
   };
 
-  const handleDeleteIncident = async (incidentId) => {
-    if (window.confirm('Are you sure you want to delete this incident report?')) {
-      try {
-        await incidentService.deleteIncident(incidentId);
-        loadIncidents();
-        alert('Incident report deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting incident:', error);
-        alert('Failed to delete incident');
-      }
+  const handleDeleteIncident = (incidentId) => {
+    setSelectedIncidentId(incidentId);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmDeleteIncident = async () => {
+    if (!selectedIncidentId) return;
+    
+    setShowDeleteConfirmModal(false);
+    try {
+      await incidentService.deleteIncident(selectedIncidentId);
+      loadIncidents();
+      setIncidentSuccessMessage('Incident report deleted successfully!');
+      setShowIncidentSuccessPopup(true);
+      setTimeout(() => {
+        setShowIncidentSuccessPopup(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error deleting incident:', error);
+      setIncidentErrorMessage('Failed to delete incident');
+      setShowIncidentErrorPopup(true);
+    } finally {
+      setSelectedIncidentId(null);
     }
   };
 
@@ -683,14 +754,174 @@ const ToolsReports = () => {
               Success!
             </h3>
             <p className="text-gray-600 text-center mb-4">
-              Announcement posted successfully!
+              {announcementSuccessMessage || 'Announcement posted successfully!'}
             </p>
             <div className="flex justify-center">
               <button
-                onClick={() => setShowSuccessPopup(false)}
+                onClick={() => {
+                  setShowSuccessPopup(false);
+                  setAnnouncementSuccessMessage('');
+                }}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Incident Success Popup */}
+      {showIncidentSuccessPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Success!
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              {incidentSuccessMessage}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowIncidentSuccessPopup(false)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Incident/Announcement Error Popup */}
+      {showIncidentErrorPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Error
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              {incidentErrorMessage || announcementErrorMessage}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  setShowIncidentErrorPopup(false);
+                  setIncidentErrorMessage('');
+                  setAnnouncementErrorMessage('');
+                }}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resolve Incident Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-green-600">Resolve Incident</h2>
+            <p className="text-gray-700 mb-4">
+              Please enter resolution notes for this incident:
+            </p>
+            <textarea
+              value={resolutionNotes}
+              onChange={(e) => setResolutionNotes(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-6"
+              rows="4"
+              placeholder="Enter resolution notes..."
+            />
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowResolveModal(false);
+                  setSelectedIncidentId(null);
+                  setResolutionNotes('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmResolveIncident}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Resolve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Incident Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Delete Incident</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this incident report? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setSelectedIncidentId(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteIncident}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Announcement Confirmation Modal */}
+      {showDeleteAnnouncementModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Delete Announcement</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this announcement? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteAnnouncementModal(false);
+                  setSelectedAnnouncementId(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAnnouncement}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
               </button>
             </div>
           </div>

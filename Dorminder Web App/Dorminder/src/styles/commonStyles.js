@@ -162,3 +162,7 @@ export const commonStyles = StyleSheet.create({
     paddingVertical: 16,
   },
 });
+
+
+
+

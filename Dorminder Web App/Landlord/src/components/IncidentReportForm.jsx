@@ -162,7 +162,7 @@ const IncidentReportForm = ({ onSubmit, onCancel, propertyId, initialData = null
       
     } catch (error) {
       console.error('Error submitting incident:', error);
-      alert('Failed to create incident report');
+      // Error will be handled by parent component
     } finally {
       setLoading(false);
     }

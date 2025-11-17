@@ -31,6 +31,12 @@ const Billings = () => {
     room: 'a-z',
     status: 'a-z'
   });
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [billToDelete, setBillToDelete] = useState(null);
   const { user } = useAuth();
 
   // Sample billing data - in real app, this would come from Firebase/Firestore
@@ -248,6 +254,12 @@ const Billings = () => {
     console.log('New bill generated:', billData);
     // Reload bills to show the new one
     loadBills();
+    // Show success popup
+    setSuccessMessage('Bill generated successfully!');
+    setShowSuccessPopup(true);
+    setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 3000);
   };
 
 
@@ -265,8 +277,20 @@ const Billings = () => {
     setSortOptions(newSortOptions);
   };
 
-  const handleBillUpdate = () => {
+  const handleBillUpdate = (message) => {
     loadBills(); // Reload bills when status is updated
+    if (message) {
+      setSuccessMessage(message);
+      setShowSuccessPopup(true);
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+      }, 3000);
+    }
+  };
+
+  const handleBillError = (message) => {
+    setErrorMessage(message);
+    setShowErrorPopup(true);
   };
 
   const handlePaymentProcessed = (updatedBill) => {
@@ -279,6 +303,50 @@ const Billings = () => {
     setSelectedBill(null);
     // Reload bills to ensure data is fresh
     loadBills();
+  };
+
+  const handlePaymentSuccess = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessPopup(true);
+    setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 3000);
+  };
+
+  const handlePaymentError = (message) => {
+    setErrorMessage(message);
+    setShowErrorPopup(true);
+  };
+
+  const handleDeleteBill = (billId) => {
+    setBillToDelete(billId);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmDeleteBill = async () => {
+    if (!billToDelete) return;
+    
+    setShowDeleteConfirmModal(false);
+    try {
+      const result = await billingService.deleteBill(billToDelete);
+      if (result.success) {
+        setSuccessMessage('Bill deleted successfully!');
+        setShowSuccessPopup(true);
+        loadBills(); // Reload bills list
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
+      } else {
+        setErrorMessage(`Failed to delete bill: ${result.error}`);
+        setShowErrorPopup(true);
+      }
+    } catch (error) {
+      console.error('Error deleting bill:', error);
+      setErrorMessage(`Error deleting bill: ${error.message}`);
+      setShowErrorPopup(true);
+    } finally {
+      setBillToDelete(null);
+    }
   };
 
        const getStatusButton = (status) => {
@@ -486,6 +554,8 @@ const Billings = () => {
                         <BillingActionMenu 
                           bill={bill} 
                           onUpdate={handleBillUpdate}
+                          onError={handleBillError}
+                          onDelete={handleDeleteBill}
                           onClose={() => {}} // Action menu handles its own closing
                         />
                       </div>
@@ -592,8 +662,96 @@ const Billings = () => {
         onClose={() => setIsPaymentModalOpen(false)}
         bill={selectedBill}
         onPaymentProcessed={handlePaymentProcessed}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
       />
 
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Success!
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              {successMessage}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Error
+            </h3>
+            <p className="text-gray-600 text-center mb-4">
+              {errorMessage}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowErrorPopup(false)}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Bill Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-xl border border-gray-200 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Delete Bill</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this bill? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setBillToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteBill}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

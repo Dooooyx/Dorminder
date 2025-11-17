@@ -46,3 +46,7 @@ export const handleMenuPress = (setIsBurgerNavVisible) => {
   console.log('Menu pressed');
   setIsBurgerNavVisible(prev => !prev);
 };
+
+
+
+
