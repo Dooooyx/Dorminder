@@ -138,9 +138,6 @@ const BurgerNav = ({
 
         {/* Menu items */}
         <View style={styles.menuList}>
-          <MenuItem label="View Room Details" onPress={onViewRoomDetails} />
-          <MenuItem label="Contact Info" onPress={onContactInfo} />
-          <MenuItem label="Notifications Settings" onPress={onNotifications} />
           <MenuItem label="Change Password" onPress={onChangePassword} />
           <MenuItem label="Log Out" onPress={onLogout} />
         </View>

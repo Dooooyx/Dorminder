@@ -103,6 +103,14 @@ export class AuthService {
         userDocData.propertyName = userData.dormName;
         userDocData.propertyAddress = userData.dormAddress;
         
+        // Store subscription plan and expiration date
+        if (userData.subscriptionPlan) {
+          userDocData.subscriptionPlan = userData.subscriptionPlan;
+        }
+        if (userData.subscriptionExpirationDate) {
+          userDocData.subscriptionExpirationDate = userData.subscriptionExpirationDate;
+        }
+        
         // Store email credentials for sending tenant emails
         if (userData.systemEmail && userData.systemEmailPassword) {
           userDocData.systemEmail = userData.systemEmail;
@@ -192,7 +200,7 @@ export class AuthService {
           await signOut(auth);
           return { 
             success: false, 
-            error: 'Your account has been disabled. Please contact support.',
+            error: 'Your account has been disabled. Please contact support. 0975 489 4945',
             enabled: false
           };
         }

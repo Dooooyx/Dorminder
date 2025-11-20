@@ -61,9 +61,7 @@ const Dashboard = () => {
           </div>
           
           {/* Recent Activity Feed - Separate section, always visible */}
-          <div className="mt-8">
-            <RecentActivity />
-          </div>
+          
         </div>
       </div>
     </div>

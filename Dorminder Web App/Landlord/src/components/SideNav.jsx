@@ -7,7 +7,6 @@ import icTenants from '../assets/SidenavIcons/ic_tenants.png';
 import icReport from '../assets/SidenavIcons/ic_report.png';
 import icTransactions from '../assets/SidenavIcons/ic_transactions.png';
 import icTools from '../assets/SidenavIcons/ic_tools.png';
-import icNotifications from '../assets/SidenavIcons/ic_notifications.png';
 import icSettings from '../assets/SidenavIcons/ic_settings.png';
 import icLogout from '../assets/SidenavIcons/ic_logout.png';
 
@@ -25,7 +24,6 @@ const SideNav = () => {
     { path: '/rules', label: 'Rules', icon: icTools },
     { path: '/transactions', label: 'Billings', icon: icTransactions },
     { path: '/tools-reports', label: 'Tools & Reports', icon: icTools },
-    { path: '/notifications', label: 'Notifications', icon: icNotifications },
   ];
 
   const bottomItems = [

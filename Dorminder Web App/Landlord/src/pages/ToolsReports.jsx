@@ -573,22 +573,22 @@ const ToolsReports = () => {
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <span className="text-blue-500">👤</span>
-                        <span>{incident.tenantName}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-base">
+                      <div className="flex items-center space-x-1 text-gray-700">
+                        <span className="text-blue-500 text-lg">👤</span>
+                        <span className="font-medium">{incident.tenantName}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <span className="text-green-500">🏠</span>
-                        <span>Room {incident.roomNumber}</span>
+                      <div className="flex items-center space-x-1 text-gray-700">
+                        <span className="text-green-500 text-lg">🏠</span>
+                        <span className="font-medium">Room {incident.roomNumber}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <span className="text-purple-500">📂</span>
-                        <span>{incident.category}</span>
+                      <div className="flex items-center space-x-1 text-gray-700">
+                        <span className="text-purple-500 text-lg">📂</span>
+                        <span className="font-medium">{incident.category}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <span className="text-orange-500">📅</span>
-                        <span>{formatDate(incident.createdAt?.toDate?.() || incident.createdAt)}</span>
+                      <div className="flex items-center space-x-1 text-gray-700">
+                        <span className="text-orange-500 text-lg">📅</span>
+                        <span className="font-medium">{formatDate(incident.createdAt?.toDate?.() || incident.createdAt)}</span>
                       </div>
                     </div>
                     {incident.estimatedCost && (

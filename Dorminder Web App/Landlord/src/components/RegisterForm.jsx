@@ -18,7 +18,8 @@ const RegisterForm = () => {
     confirmPassword: '',
     phoneNumber: '',
     dormName: '',
-    dormAddress: ''
+    dormAddress: '',
+    subscriptionPlan: ''
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
@@ -120,7 +121,38 @@ const RegisterForm = () => {
       return;
     }
 
+    // Subscription plan validation
+    if (!formData.subscriptionPlan) {
+      setError('Please select a subscription plan');
+      setLoading(false);
+      return;
+    }
+
+    // Calculate expiration date based on subscription plan
+    const calculateExpirationDate = (plan) => {
+      const today = new Date();
+      const expirationDate = new Date(today);
+      
+      switch (plan) {
+        case '3 months':
+          expirationDate.setMonth(today.getMonth() + 3);
+          break;
+        case '6 months':
+          expirationDate.setMonth(today.getMonth() + 6);
+          break;
+        case 'Annual':
+          expirationDate.setFullYear(today.getFullYear() + 1);
+          break;
+        default:
+          expirationDate.setMonth(today.getMonth() + 3);
+      }
+      
+      return expirationDate;
+    };
+
     try {
+      const expirationDate = calculateExpirationDate(formData.subscriptionPlan);
+      
       const result = await authService.register(formData.email, formData.password, {
         firstName: formData.firstName,
         middleInitial: formData.middleInitial,
@@ -129,6 +161,8 @@ const RegisterForm = () => {
         role: 'landlord', // Set as landlord for this portal
         dormName: formData.dormName,
         dormAddress: formData.dormAddress,
+        subscriptionPlan: formData.subscriptionPlan,
+        subscriptionExpirationDate: expirationDate,
         // Use the same email and password for sending tenant emails
         systemEmail: formData.email,
         systemEmailPassword: formData.password
@@ -308,6 +342,48 @@ const RegisterForm = () => {
             required
             showLabel={false}
           />
+
+          {/* Subscription Plan Selection */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Subscription Plan <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: '3 months' }))}
+                className={`py-3 px-4 border-2 rounded-lg font-medium transition-all ${
+                  formData.subscriptionPlan === '3 months'
+                    ? 'border-[#3D5A80] bg-[#3D5A80] text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                3 Months
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: '6 months' }))}
+                className={`py-3 px-4 border-2 rounded-lg font-medium transition-all ${
+                  formData.subscriptionPlan === '6 months'
+                    ? 'border-[#3D5A80] bg-[#3D5A80] text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                6 Months
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: 'Annual' }))}
+                className={`py-3 px-4 border-2 rounded-lg font-medium transition-all ${
+                  formData.subscriptionPlan === 'Annual'
+                    ? 'border-[#3D5A80] bg-[#3D5A80] text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Annual
+              </button>
+            </div>
+          </div>
 
           {/* Terms & Privacy Checkbox */}
           <CheckboxField

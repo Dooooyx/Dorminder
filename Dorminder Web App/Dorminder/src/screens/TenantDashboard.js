@@ -11,7 +11,6 @@ import {
 import TopNav from '../components/TopNav';
 import BotNav from '../components/BotNav';
 import InfoCard from '../components/InfoCard';
-import AnnouncementCard from '../components/AnnouncementCard';
 import BurgerNav from '../components/BurgerNav';
 import TenantInfoHeader from '../components/TenantInfoHeader';
 import { authService } from '../services/auth';
@@ -177,14 +176,13 @@ const TenantDashboard = ({ navigation }) => {
       );
     }
 
-    const { tenant, room, rent, newsItems } = dashboardData;
+    const { tenant, room, rent } = dashboardData;
     
     // Debug logging
     console.log('Dashboard data received:', {
       tenant,
       room,
-      rent,
-      newsItems
+      rent
     });
     
     // Format room number
@@ -248,26 +246,6 @@ const TenantDashboard = ({ navigation }) => {
           onCtaPress={handleViewMore}
         />
 
-        <Text style={styles.sectionTitle}>News ↗</Text>
-
-        {/* Dynamic News */}
-        {newsItems && newsItems.length > 0 ? (
-          newsItems.map((newsItem, index) => (
-            <AnnouncementCard
-              key={newsItem.id || index}
-              dateText={tenantDataService.formatDate(newsItem.createdAt)}
-              statusLabel={newsItem.status || 'Active'}
-              title={newsItem.title || 'News'}
-              subtitle={newsItem.subtitle || ''}
-              body={newsItem.body || newsItem.content || ''}
-              footer={`Posted By: ${newsItem.postedBy || 'Landlord'}`}
-            />
-          ))
-        ) : (
-          <View style={styles.noAnnouncementsContainer}>
-            <Text style={styles.noAnnouncementsText}>No news at this time</Text>
-          </View>
-        )}
       </ScrollView>
     );
   };

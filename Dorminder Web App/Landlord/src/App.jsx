@@ -54,7 +54,6 @@ function App() {
             <Route path="/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
             <Route path="/transactions" element={<ProtectedRoute><Billings /></ProtectedRoute>} />
             <Route path="/tools-reports" element={<ProtectedRoute><ToolsReports /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="superadmin"><SuperAdmin /></ProtectedRoute>} />
             <Route path="/logout" element={<Navigate to="/login" replace />} />
