@@ -21,7 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "googleServicesFile": "./google-services.json",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.dorminder.tenant"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +34,10 @@
       "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "dorminder-web-app-925c1.firebasestorage.app",
       "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "556474579423",
       "EXPO_PUBLIC_FIREBASE_APP_ID": "1:556474579423:web:34554fa010f5ecd635ec6a",
-      "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8GYTKZ3KM2"
+      "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8GYTKZ3KM2",
+      "eas": {
+        "projectId": "e69f5fee-ac52-4b3e-a6aa-cd9661c5721e"
+      }
     },
     "plugins": [
       "expo-font"
